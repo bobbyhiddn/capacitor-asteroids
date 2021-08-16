@@ -10,30 +10,42 @@ import (
 	"github.com/hajimehoshi/ebiten/v2/ebitenutil"
 )
 
-// Game implements ebiten.Game interface.
 type Game struct{}
 
 var (
 	//keyStates = map[ebiten.Key]int{}
-	player_pos_x      float64 = 0
-	player_pos_y      float64 = 0
+	// TODO: replace with a config/game.json config file
+	window_height		 int     = 480
+	window_width		 int     = 640
+
+	player_pos_x      float64 = float64(window_width/4) // divided by 4 because layout is divided by 2
+	player_pos_y      float64 = float64(window_height/4)
 	player_delta_x    float64 = 0
 	player_delta_y    float64 = 0
 	player_angle      float64 = 0
 )
 
-// Update proceeds the game state.
-// Update is called every tick (1/60 [s] by default).
 func (g *Game) Update() error {
 	keyboard_handling()
-	// Write your game's logical update.
+
+	// Loop player back to other side of screen
+	if (player_pos_x > float64(window_width/2)) {
+		player_pos_x = 0
+	}
+	if (player_pos_y > float64(window_height/2)) {
+		player_pos_y = 0
+	}
+	if (player_pos_x < 0) {
+		player_pos_x = float64(window_width/2)
+	}
+	if (player_pos_y < 0) {
+		player_pos_y = float64(window_height/2)
+	}
+	
 	return nil
 }
 
-// Draw draws the game screen.
-// Draw is called every frame (typically 1/60[s] for 60Hz display).
 func (g *Game) Draw(screen *ebiten.Image) {
-
 	// TODO: move info to toggled debug menu
 	fmt.Printf("player_pos_x: %f\n", player_pos_x)
 	fmt.Printf("player_pos_y: %f\n", player_pos_y)
@@ -41,24 +53,24 @@ func (g *Game) Draw(screen *ebiten.Image) {
 	fmt.Printf("player_delta_y: %f\n", player_delta_y)
 	fmt.Printf("player_angle: %f\n", player_angle)
 
-	ebitenutil.DrawRect(screen, float64(player_pos_x), float64(player_pos_y), 12, 12, color.White)
-
+	// TODO: replace line with player, player being a collection of lines in shape of ship
+	ebitenutil.DrawLine(screen, float64(player_pos_x), float64(player_pos_y), float64(player_pos_x) + player_delta_x * 4, float64(player_pos_y) +player_delta_y * 4, color.White)
 }
 
-// Layout takes the outside size (e.g., the window size) and returns the (logical) screen size.
-// If you don't have to adjust the screen size with the outside size, just return a fixed size.
 func (g *Game) Layout(outsideWidth, outsideHeight int) (screenWidth, screenHeight int) {
-	return 320, 240
+	return outsideWidth/2, outsideHeight/2
 }
 
 func main() {
-	game := &Game{}
+	// Init work
 	player_delta_x = math.Cos(player_angle) * 2
 	player_delta_y = math.Sin(player_angle) * 2
-	// Specify the window size as you like. Here, a doubled size is specified.
-	ebiten.SetWindowSize(640, 480)
-	ebiten.SetWindowTitle("Your game's title")
-	// Call ebiten.RunGame to start your game loop.
+
+	game := &Game{}
+
+	ebiten.SetWindowSize(window_width, window_height)
+	ebiten.SetWindowTitle("Ebiten Asteroids")
+	
 	if err := ebiten.RunGame(game); err != nil {
 			log.Fatal(err)
 	}
