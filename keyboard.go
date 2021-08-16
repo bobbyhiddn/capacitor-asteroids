@@ -33,4 +33,18 @@ func keyboard_handling() {
 		player_delta_x = math.Cos(player_angle) * 3
 		player_delta_y = math.Sin(player_angle) * 3
 	}
+
+	if ebiten.IsKeyPressed(ebiten.KeyP) {
+		keyStates[ebiten.KeyP]++
+	} else {
+		keyStates[ebiten.KeyP] = 0
+	}
+
+	if IsKeyTriggered(ebiten.KeyP) {
+		if show_debug == 0 {
+			show_debug = 1
+		} else {
+			show_debug = 0
+		}
+	}
 }

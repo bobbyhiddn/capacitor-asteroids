@@ -5,6 +5,7 @@ import (
 	"image/color"
 	"log"
 	"math"
+	"strings"
 
 	"github.com/hajimehoshi/ebiten/v2"
 	"github.com/hajimehoshi/ebiten/v2/ebitenutil"
@@ -23,11 +24,14 @@ var (
 	window_height int
 	window_width  int
 
+	keyStates = map[ebiten.Key]int{}
 	player_pos_x   float64 = 0
 	player_pos_y   float64 = 0
 	player_delta_x float64 = 0
 	player_delta_y float64 = 0
 	player_angle   float64 = 0
+
+	show_debug int = 0
 )
 
 func (g *Game) Update() error {
@@ -51,12 +55,16 @@ func (g *Game) Update() error {
 }
 
 func (g *Game) Draw(screen *ebiten.Image) {
-	// TODO: move info to toggled debug menu
-	fmt.Printf("player_pos_x: %f\n", player_pos_x)
-	fmt.Printf("player_pos_y: %f\n", player_pos_y)
-	fmt.Printf("player_delta_x: %f\n", player_delta_x)
-	fmt.Printf("player_delta_y: %f\n", player_delta_y)
-	fmt.Printf("player_angle: %f\n", player_angle)
+	// Show debug info
+	str := `{{.player_pos_x}}{{.player_pos_y}}{{.player_delta_x}}{{.player_delta_y}}{{.player_angle}}`
+	str = strings.Replace(str, "{{.player_pos_x}}", fmt.Sprintf("player_pos_x:   %f\n", player_pos_x), -1)
+	str = strings.Replace(str, "{{.player_pos_y}}", fmt.Sprintf("player_pos_y:   %f\n", player_pos_y), -1)
+	str = strings.Replace(str, "{{.player_delta_x}}", fmt.Sprintf("player_delta_x: %f\n", player_delta_x), -1)
+	str = strings.Replace(str, "{{.player_delta_y}}", fmt.Sprintf("player_delta_y: %f\n", player_delta_y), -1)
+	str = strings.Replace(str, "{{.player_angle}}", fmt.Sprintf("player_angle:   %f\n", player_angle), -1)
+	if show_debug == 1 {
+		ebitenutil.DebugPrint(screen, str)
+	}
 
 	// TODO: replace line with player, player being a collection of lines in shape of ship
 	ebitenutil.DrawLine(screen, float64(player_pos_x), float64(player_pos_y), float64(player_pos_x)+player_delta_x*4, float64(player_pos_y)+player_delta_y*4, color.White)
@@ -64,6 +72,10 @@ func (g *Game) Draw(screen *ebiten.Image) {
 
 func (g *Game) Layout(outsideWidth, outsideHeight int) (screenWidth, screenHeight int) {
 	return outsideWidth / 2, outsideHeight / 2
+}
+
+func IsKeyTriggered(key ebiten.Key) bool {
+	return keyStates[key] == 1
 }
 
 func main() {
