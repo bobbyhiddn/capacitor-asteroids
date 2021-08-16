@@ -1,13 +1,13 @@
 # ebiten-asteroids
 
-### Build & run
+## Build & run
 
-Build with Go 1.16 and Ebiten v2 on MacOS
+Built with Go 1.16 and [Ebiten v2](https://github.com/hajimehoshi/ebiten) on MacOS.
 
      go build
     ./ebiten-asteroids
 
-### Keymaps
+## Keymaps
 
 Arrows keys or WASD : Move
 
