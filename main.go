@@ -12,14 +12,19 @@ import (
 
 type Game struct{}
 
+type GameConfig struct {
+	WindowWidth  int	`json:"window_width"`
+	WindowHeight int	`json:"window_height"`
+}
+
 var (
 	//keyStates = map[ebiten.Key]int{}
 	// TODO: replace with a config/game.json config file
-	window_height		 int     = 480
-	window_width		 int     = 640
+	window_height		 int
+	window_width		 int
 
-	player_pos_x      float64 = float64(window_width/4) // divided by 4 because layout is divided by 2
-	player_pos_y      float64 = float64(window_height/4)
+	player_pos_x      float64 = 0
+	player_pos_y      float64 = 0
 	player_delta_x    float64 = 0
 	player_delta_y    float64 = 0
 	player_angle      float64 = 0
@@ -41,7 +46,7 @@ func (g *Game) Update() error {
 	if (player_pos_y < 0) {
 		player_pos_y = float64(window_height/2)
 	}
-	
+
 	return nil
 }
 
@@ -65,6 +70,8 @@ func main() {
 	// Init work
 	player_delta_x = math.Cos(player_angle) * 2
 	player_delta_y = math.Sin(player_angle) * 2
+
+	HandleGameConfig()
 
 	game := &Game{}
 
