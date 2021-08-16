@@ -19,12 +19,10 @@ type GameConfig struct {
 }
 
 var (
-	//keyStates = map[ebiten.Key]int{}
-	// TODO: replace with a config/game.json config file
 	window_height int
 	window_width  int
 
-	keyStates = map[ebiten.Key]int{}
+	keyStates              = map[ebiten.Key]int{}
 	player_pos_x   float64 = 0
 	player_pos_y   float64 = 0
 	player_delta_x float64 = 0
@@ -35,20 +33,20 @@ var (
 )
 
 func (g *Game) Update() error {
-	keyboard_handling()
+	KeyboardHandler()
 
 	// Loop player back to other side of screen
-	if player_pos_x > float64(window_width/2) {
+	if player_pos_x > float64(window_width) {
 		player_pos_x = 0
 	}
-	if player_pos_y > float64(window_height/2) {
+	if player_pos_y > float64(window_height) {
 		player_pos_y = 0
 	}
 	if player_pos_x < 0 {
-		player_pos_x = float64(window_width / 2)
+		player_pos_x = float64(window_width)
 	}
 	if player_pos_y < 0 {
-		player_pos_y = float64(window_height / 2)
+		player_pos_y = float64(window_height)
 	}
 
 	return nil
@@ -64,26 +62,51 @@ func (g *Game) Draw(screen *ebiten.Image) {
 	str = strings.Replace(str, "{{.player_angle}}", fmt.Sprintf("player_angle:   %f\n", player_angle), -1)
 	if show_debug == 1 {
 		ebitenutil.DebugPrint(screen, str)
+		// Show player rotation point
+		ebitenutil.DrawRect(screen, player_pos_x, player_pos_y, 1, 1, color.White)
 	}
 
-	// TODO: replace line with player, player being a collection of lines in shape of ship
-	ebitenutil.DrawLine(screen, float64(player_pos_x), float64(player_pos_y), float64(player_pos_x)+player_delta_x*4, float64(player_pos_y)+player_delta_y*4, color.White)
+	DrawSpaceship(screen, player_pos_x, player_pos_y, player_angle)
 }
 
 func (g *Game) Layout(outsideWidth, outsideHeight int) (screenWidth, screenHeight int) {
-	return outsideWidth / 2, outsideHeight / 2
+	return outsideWidth, outsideHeight
 }
 
 func IsKeyTriggered(key ebiten.Key) bool {
 	return keyStates[key] == 1
 }
 
-func main() {
-	// Init work
-	player_delta_x = math.Cos(player_angle) * 2
-	player_delta_y = math.Sin(player_angle) * 2
+func DrawSpaceship(screen *ebiten.Image, centerX, centerY, angle float64) {
+	ship_point_x := centerX + math.Cos(angle) * float64(window_height/36)
+	ship_point_y := centerY + math.Sin(angle) * float64(window_height/36)
 
+	rear_line_center_x := centerX - math.Cos(angle) * float64(window_height/114)
+	rear_line_center_y := centerY - math.Sin(angle) * float64(window_height/114)
+
+	line_one_x := math.Cos(angle-math.Pi/8) * float64(window_height/20)
+	line_one_y := math.Sin(angle-math.Pi/8) * float64(window_height/20)
+	line_two_x := math.Cos(angle+math.Pi/8) * float64(window_height/20)
+	line_two_y := math.Sin(angle+math.Pi/8) * float64(window_height/20)
+	line_three_x := math.Cos(angle-math.Pi/2) * float64(window_height/62)
+	line_three_y := math.Sin(angle-math.Pi/2) * float64(window_height/62)
+	line_four_x := math.Cos(angle+math.Pi/2) * float64(window_height/62)
+	line_four_y := math.Sin(angle+math.Pi/2) * float64(window_height/62)
+
+	ebitenutil.DrawLine(screen, ship_point_x, ship_point_y, ship_point_x-line_one_x, ship_point_y-line_one_y, color.White)
+	ebitenutil.DrawLine(screen, ship_point_x, ship_point_y, ship_point_x-line_two_x, ship_point_y-line_two_y, color.White)
+	ebitenutil.DrawLine(screen, rear_line_center_x, rear_line_center_y, rear_line_center_x-line_three_x, rear_line_center_y-line_three_y, color.White)
+	ebitenutil.DrawLine(screen, rear_line_center_x, rear_line_center_y, rear_line_center_x-line_four_x, rear_line_center_y-line_four_y, color.White)
+}
+
+func main() {
 	HandleGameConfig()
+	
+	// Init work
+	player_pos_x = float64(window_width)/2
+	player_pos_y = float64(window_height)/2
+	player_delta_x = math.Cos(player_angle) * float64(window_height/160)
+	player_delta_y = math.Sin(player_angle) * float64(window_height/160)
 
 	game := &Game{}
 
