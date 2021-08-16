@@ -10,6 +10,9 @@ func KeyboardHandler() {
 	if ebiten.IsKeyPressed(ebiten.KeyUp) || ebiten.IsKeyPressed(ebiten.KeyW) {
 		player_pos_x = player_pos_x + player_delta_x
 		player_pos_y = player_pos_y + player_delta_y
+		show_thruster = 1
+	} else {
+		show_thruster = 0
 	}
 	if ebiten.IsKeyPressed(ebiten.KeyDown) || ebiten.IsKeyPressed(ebiten.KeyS) {
 		player_pos_x = player_pos_x - player_delta_x
