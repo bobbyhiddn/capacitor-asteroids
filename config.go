@@ -13,9 +13,9 @@ func HandleGameConfig() {
 	}
 
 	data := GameConfig{}
-	
+
 	_ = json.Unmarshal([]byte(file), &data)
 
 	window_height = data.WindowHeight
-	window_width  = data.WindowWidth
+	window_width = data.WindowWidth
 }
