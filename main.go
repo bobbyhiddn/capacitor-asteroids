@@ -109,8 +109,8 @@ func main() {
 	HandleGameConfig()
 
 	// Init work
-	player_pos_x=float64(window_width) / 2
-	player_pos_y = float64(window_height) / 2
+	player_pos_x = float64(window_width) / 2
+	player_pos_y= float64(window_height) / 2
 	player_delta_x = math.Cos(player_angle) * float64(window_height/160)
 	player_delta_y = math.Sin(player_angle) * float64(window_height/160)
 
