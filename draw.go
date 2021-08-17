@@ -1,3 +1,7 @@
+/*
+ * I know this file looks awful, but I'm not sure how else to generate graphics with lines.
+ * If someone knows a better way to do this, please let me know, or submit a pull request.
+ */
 package main
 
 import (
@@ -43,4 +47,17 @@ func DrawThrusters(screen *ebiten.Image, centerX, centerY, angle float64) {
 
 	ebitenutil.DrawLine(screen, thruster_point_x, thruster_point_y, thruster_point_x-line_one_x, thruster_point_y-line_one_y, color.White)
 	ebitenutil.DrawLine(screen, thruster_point_x, thruster_point_y, thruster_point_x-line_two_x, thruster_point_y-line_two_y, color.White)
+}
+
+// TODO: Replace these functions with ones like above, generating the lines
+func DrawAsteroidSmall(screen *ebiten.Image, centerX, centerY, angle float64) {
+	ebitenutil.DrawRect(screen, centerX, centerY, 10, 10, color.White)
+}
+
+func DrawAsteroidMedium(screen *ebiten.Image, centerX, centerY, angle float64) {
+	ebitenutil.DrawRect(screen, centerX, centerY, 20, 20, color.White)
+}
+
+func DrawAsteroidLarge(screen *ebiten.Image, centerX, centerY, angle float64) {
+	ebitenutil.DrawRect(screen, centerX, centerY, 30, 30, color.White)
 }

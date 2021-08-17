@@ -18,18 +18,25 @@ type GameConfig struct {
 	WindowHeight int `json:"window_height"`
 }
 
+type Asteroid struct {
+	pos_x, pos_y, angle, velocity float64
+	size                          int
+}
+
 var (
 	window_height int
 	window_width  int
 
-	keyStates      map[ebiten.Key]int = map[ebiten.Key]int{}
-	player_pos_x   float64            = 0
-	player_pos_y   float64            = 0
-	player_delta_x float64            = 0
-	player_delta_y float64            = 0
-	player_angle   float64            = 0
+	keyStates map[ebiten.Key]int = map[ebiten.Key]int{}
+	asteroids []*Asteroid
 
-	show_debug int = 0
+	player_pos_x   float64 = 0
+	player_pos_y   float64 = 0
+	player_delta_x float64 = 0
+	player_delta_y float64 = 0
+	player_angle   float64 = 0
+
+	show_debug    int = 0
 	show_thruster int = 0
 )
 
@@ -50,11 +57,16 @@ func (g *Game) Update() error {
 		player_pos_y = float64(window_height)
 	}
 
+	for _, a := range asteroids {
+		a.pos_x += a.velocity * math.Cos(a.angle) * float64(window_height/160)
+		a.pos_y += a.velocity * math.Sin(a.angle) * float64(window_height/160)
+	}
+
 	return nil
 }
 
 func (g *Game) Draw(screen *ebiten.Image) {
-	// Show debug info
+	// Debug info
 	str := `{{.player_pos_x}}{{.player_pos_y}}{{.player_delta_x}}{{.player_delta_y}}{{.player_angle}}`
 	str = strings.Replace(str, "{{.player_pos_x}}", fmt.Sprintf("player_pos_x:   %f\n", player_pos_x), -1)
 	str = strings.Replace(str, "{{.player_pos_y}}", fmt.Sprintf("player_pos_y:   %f\n", player_pos_y), -1)
@@ -62,8 +74,9 @@ func (g *Game) Draw(screen *ebiten.Image) {
 	str = strings.Replace(str, "{{.player_delta_y}}", fmt.Sprintf("player_delta_y: %f\n", player_delta_y), -1)
 	str = strings.Replace(str, "{{.player_angle}}", fmt.Sprintf("player_angle:   %f\n", player_angle), -1)
 	if show_debug == 1 {
+		// Show debug info
 		ebitenutil.DebugPrint(screen, str)
-		// Show player rotation point
+		// Show player point of rotation
 		ebitenutil.DrawRect(screen, player_pos_x, player_pos_y, 1, 1, color.White)
 	}
 
@@ -71,6 +84,16 @@ func (g *Game) Draw(screen *ebiten.Image) {
 
 	if show_thruster == 1 {
 		DrawThrusters(screen, player_pos_x, player_pos_y, player_angle)
+	}
+
+	for _, a := range asteroids {
+		if a.size == 0 {
+			DrawAsteroidSmall(screen, a.pos_x, a.pos_y, a.angle)
+		} else if a.size == 1 {
+			DrawAsteroidMedium(screen, a.pos_x, a.pos_y, a.angle)
+		} else if a.size == 2 {
+			DrawAsteroidLarge(screen, a.pos_x, a.pos_y, a.angle)
+		}
 	}
 }
 
@@ -90,6 +113,15 @@ func main() {
 	player_pos_y = float64(window_height) / 2
 	player_delta_x = math.Cos(player_angle) * float64(window_height/160)
 	player_delta_y = math.Sin(player_angle) * float64(window_height/160)
+
+	// Test asteroid
+	asteroids = append(asteroids, &Asteroid{
+		pos_x:    30,
+		pos_y:    30,
+		angle:    1,
+		velocity: 0.5,
+		size:     2,
+	})
 
 	game := &Game{}
 
