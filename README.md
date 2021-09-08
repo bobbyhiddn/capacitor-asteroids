@@ -4,6 +4,8 @@ A recreation of the classic Atari game Asteroids with Go and Ebiten.
 
 To keep with the original Asteroids, the graphics are all generated from lines drawn on the screen instead of by loading assets.
 
+Currently has a ship flying around, looping on edge of screen, and showing thruster when accelerating.
+
 ## ToDo
 
 - [ ] Title screen
