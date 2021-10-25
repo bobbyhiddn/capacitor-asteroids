@@ -49,6 +49,10 @@ func DrawThrusters(screen *ebiten.Image, centerX, centerY, angle float64) {
 	ebitenutil.DrawLine(screen, thruster_point_x, thruster_point_y, thruster_point_x-line_two_x, thruster_point_y-line_two_y, color.White)
 }
 
+func DrawBullet(screen *ebiten.Image, centerX, centerY, angle float64) {
+	ebitenutil.DrawLine(screen, centerX, centerY, centerX+2, centerY+2, color.White)
+}
+
 // TODO: Replace these functions with ones like above, generating the lines
 func DrawAsteroidSmall(screen *ebiten.Image, centerX, centerY, angle float64) {
 	ebitenutil.DrawRect(screen, centerX, centerY, 10, 10, color.White)
