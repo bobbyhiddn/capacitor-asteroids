@@ -47,16 +47,21 @@ func KeyboardHandler() {
 
 	// Shoot
 	if ebiten.IsKeyPressed(ebiten.KeySpace) {
-		bullets = append(bullets, &Bullet{
-			pos_x: player_pos_x + math.Cos(player_angle)*float64(window_height/36),
-			pos_y: player_pos_y + math.Sin(player_angle)*float64(window_height/36),
-			angle: player_angle,
-		})
+		if key_states[ebiten.KeySpace]%45 == 0 {
+			bullets = append(bullets, &Bullet{
+				pos_x: player_pos_x + math.Cos(player_angle)*float64(window_height/36),
+				pos_y: player_pos_y + math.Sin(player_angle)*float64(window_height/36),
+				angle: player_angle,
+			})
+		}
+		key_states[ebiten.KeySpace]++
+	} else {
+		key_states[ebiten.KeySpace] = 0
 	}
 
 	if ebiten.IsKeyPressed(ebiten.KeyP) {
-		keyStates[ebiten.KeyP]++
+		key_states[ebiten.KeyP]++
 	} else {
-		keyStates[ebiten.KeyP] = 0
+		key_states[ebiten.KeyP] = 0
 	}
 }

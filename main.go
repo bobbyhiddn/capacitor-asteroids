@@ -19,12 +19,17 @@ type GameConfig struct {
 }
 
 type Asteroid struct {
-	pos_x, pos_y, angle, velocity float64
-	size                          int
+	pos_x    float64
+	pos_y    float64
+	angle    float64
+	velocity float64
+	size     int
 }
 
 type Bullet struct {
-	pos_x, pos_y, angle float64
+	pos_x float64
+	pos_y float64
+	angle float64
 }
 
 var (
@@ -33,11 +38,11 @@ var (
 	window_width  int = 1000
 
 	// Game states
-	keyStates     map[ebiten.Key]int = map[ebiten.Key]int{}
+	key_states    map[ebiten.Key]int = map[ebiten.Key]int{}
 	show_debug    int                = 0
 	show_thruster int                = 0
 
-	// Entiries
+	// Entities
 	asteroids []*Asteroid
 	bullets   []*Bullet
 
@@ -51,7 +56,7 @@ var (
 	player_velocity_y float64 = 0
 
 	// Constants
-	bullet_velocity float64 = 2
+	bullet_velocity float64 = 1
 )
 
 func (g *Game) Update() error {
@@ -143,7 +148,7 @@ func (g *Game) Layout(outsideWidth, outsideHeight int) (screenWidth, screenHeigh
 }
 
 func IsKeyTriggered(key ebiten.Key) bool {
-	return keyStates[key] == 1
+	return key_states[key] == 1
 }
 
 func main() {

@@ -50,7 +50,7 @@ func DrawThrusters(screen *ebiten.Image, centerX, centerY, angle float64) {
 }
 
 func DrawBullet(screen *ebiten.Image, centerX, centerY, angle float64) {
-	ebitenutil.DrawLine(screen, centerX, centerY, centerX+2, centerY+2, color.White)
+	ebitenutil.DrawRect(screen, centerX, centerY, 3, 3, color.White)
 }
 
 // TODO: Replace these functions with ones like above, generating the lines
