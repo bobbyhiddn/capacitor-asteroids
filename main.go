@@ -47,13 +47,14 @@ var (
 	bullets   []*Bullet
 
 	// Player info
-	player_pos_x      float64 = 0
-	player_pos_y      float64 = 0
-	player_delta_x    float64 = 0
-	player_delta_y    float64 = 0
-	player_angle      float64 = 0
-	player_velocity_x float64 = 0
-	player_velocity_y float64 = 0
+	player_pos_x        float64 = 0
+	player_pos_y        float64 = 0
+	player_delta_x      float64 = 0
+	player_delta_y      float64 = 0
+	player_angle        float64 = 0
+	player_velocity_x   float64 = 0
+	player_velocity_y   float64 = 0
+	player_max_velocity float64 = 6
 
 	// Constants
 	bullet_velocity float64 = 1

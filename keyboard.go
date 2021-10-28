@@ -15,6 +15,9 @@ var (
 func KeyboardHandler() {
 	// Forward
 	if ebiten.IsKeyPressed(ebiten.KeyUp) || ebiten.IsKeyPressed(ebiten.KeyW) {
+		if math.Abs(player_velocity_x+player_velocity_y) > player_max_velocity {
+			return
+		}
 		player_velocity_x = player_velocity_x + player_delta_x*0.02
 		player_velocity_y = player_velocity_y + player_delta_y*0.02
 		show_thruster = 1
@@ -24,6 +27,9 @@ func KeyboardHandler() {
 
 	// Back
 	if ebiten.IsKeyPressed(ebiten.KeyDown) || ebiten.IsKeyPressed(ebiten.KeyS) {
+		if math.Abs(player_velocity_x+player_velocity_y) > player_max_velocity {
+			return
+		}
 		player_velocity_x = player_velocity_x - player_delta_x*0.02
 		player_velocity_y = player_velocity_y - player_delta_y*0.02
 		show_thruster = 0
@@ -56,7 +62,7 @@ func KeyboardHandler() {
 		t := time.Now()
 		elapsed := t.Sub(bullet_timer)
 		fmt.Println(elapsed)
-		if elapsed > 500*time.Millisecond {
+		if elapsed > 750*time.Millisecond {
 			bullets = append(bullets, &Bullet{
 				pos_x: player_pos_x + math.Cos(player_angle)*float64(window_height/36),
 				pos_y: player_pos_y + math.Sin(player_angle)*float64(window_height/36),
