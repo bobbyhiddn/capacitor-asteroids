@@ -1,9 +1,15 @@
 package main
 
 import (
+	"fmt"
 	"math"
+	"time"
 
 	"github.com/hajimehoshi/ebiten/v2"
+)
+
+var (
+	bullet_timer time.Time = time.Now()
 )
 
 func KeyboardHandler() {
@@ -47,16 +53,19 @@ func KeyboardHandler() {
 
 	// Shoot
 	if ebiten.IsKeyPressed(ebiten.KeySpace) {
-		if key_states[ebiten.KeySpace]%45 == 0 {
+		t := time.Now()
+		elapsed := t.Sub(bullet_timer)
+		fmt.Println(elapsed)
+		if elapsed > 500*time.Millisecond {
 			bullets = append(bullets, &Bullet{
 				pos_x: player_pos_x + math.Cos(player_angle)*float64(window_height/36),
 				pos_y: player_pos_y + math.Sin(player_angle)*float64(window_height/36),
 				angle: player_angle,
 			})
+		} else {
+			return
 		}
-		key_states[ebiten.KeySpace]++
-	} else {
-		key_states[ebiten.KeySpace] = 0
+		bullet_timer = time.Now()
 	}
 
 	if ebiten.IsKeyPressed(ebiten.KeyP) {
