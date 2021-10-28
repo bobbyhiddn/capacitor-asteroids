@@ -1,7 +1,6 @@
 package main
 
 import (
-	"fmt"
 	"math"
 	"time"
 
@@ -61,12 +60,12 @@ func KeyboardHandler() {
 	if ebiten.IsKeyPressed(ebiten.KeySpace) {
 		t := time.Now()
 		elapsed := t.Sub(bullet_timer)
-		fmt.Println(elapsed)
-		if elapsed > 750*time.Millisecond {
+		if elapsed > laser_fire_speed*time.Millisecond {
 			bullets = append(bullets, &Bullet{
-				pos_x: player_pos_x + math.Cos(player_angle)*float64(window_height/36),
-				pos_y: player_pos_y + math.Sin(player_angle)*float64(window_height/36),
-				angle: player_angle,
+				pos_x:       player_pos_x + math.Cos(player_angle)*float64(window_height/36),
+				pos_y:       player_pos_y + math.Sin(player_angle)*float64(window_height/36),
+				angle:       player_angle,
+				origin_time: time.Now(),
 			})
 		} else {
 			return

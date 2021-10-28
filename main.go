@@ -6,6 +6,7 @@ import (
 	"log"
 	"math"
 	"strings"
+	"time"
 
 	"github.com/hajimehoshi/ebiten/v2"
 	"github.com/hajimehoshi/ebiten/v2/ebitenutil"
@@ -27,9 +28,10 @@ type Asteroid struct {
 }
 
 type Bullet struct {
-	pos_x float64
-	pos_y float64
-	angle float64
+	pos_x       float64
+	pos_y       float64
+	angle       float64
+	origin_time time.Time
 }
 
 var (
@@ -54,10 +56,12 @@ var (
 	player_angle        float64 = 0
 	player_velocity_x   float64 = 0
 	player_velocity_y   float64 = 0
-	player_max_velocity float64 = 6
+	player_max_velocity float64 = 5
 
-	// Constants
-	bullet_velocity float64 = 1
+	// Laser info
+	laser_velocity   float64       = 5
+	laser_fire_speed time.Duration = 750 // In milliseconds
+	laser_lifespan   time.Duration = 250 // In milliseconds
 )
 
 func (g *Game) Update() error {
@@ -90,10 +94,30 @@ func (g *Game) Update() error {
 		a.pos_y += a.velocity * math.Sin(a.angle) * float64(window_height/160)
 	}
 
+	var new_bullets []*Bullet
 	for _, b := range bullets {
-		b.pos_x += bullet_velocity * math.Cos(b.angle) * float64(window_height/160)
-		b.pos_y += bullet_velocity * math.Sin(b.angle) * float64(window_height/160)
+		b.pos_x += laser_velocity * math.Cos(b.angle) * float64(window_height/160)
+		b.pos_y += laser_velocity * math.Sin(b.angle) * float64(window_height/160)
+		t := time.Now()
+		elapsed := t.Sub(b.origin_time)
+		if elapsed < laser_lifespan*time.Millisecond {
+			new_bullets = append(new_bullets, b)
+		}
+		if b.pos_x > float64(window_width) {
+			b.pos_x = 0
+		}
+		if b.pos_y > float64(window_height) {
+			b.pos_y = 0
+		}
+		if b.pos_x < 0 {
+			b.pos_x = float64(window_width)
+		}
+		if b.pos_y < 0 {
+			b.pos_y = float64(window_height)
+		}
 	}
+
+	bullets = new_bullets
 
 	player_pos_x = player_pos_x + player_velocity_x
 	player_pos_y = player_pos_y + player_velocity_y
@@ -106,7 +130,7 @@ func (g *Game) Update() error {
 
 func (g *Game) Draw(screen *ebiten.Image) {
 	// Debug info
-	str := `{{.fps}}{{.player_pos_x}}{{.player_pos_y}}{{.player_delta_x}}{{.player_delta_y}}{{.player_angle}}{{.player_velocity_x}}{{.player_velocity_y}}`
+	str := `{{.fps}}{{.player_pos_x}}{{.player_pos_y}}{{.player_delta_x}}{{.player_delta_y}}{{.player_angle}}{{.player_velocity_x}}{{.player_velocity_y}}{{.bullet_count}}`
 	str = strings.Replace(str, "{{.fps}}", fmt.Sprintf("FPS: %d\n", int(ebiten.CurrentFPS())), -1)
 	str = strings.Replace(str, "{{.player_pos_x}}", fmt.Sprintf("player_pos_x: %f\n", player_pos_x), -1)
 	str = strings.Replace(str, "{{.player_pos_y}}", fmt.Sprintf("player_pos_y: %f\n", player_pos_y), -1)
@@ -115,6 +139,7 @@ func (g *Game) Draw(screen *ebiten.Image) {
 	str = strings.Replace(str, "{{.player_angle}}", fmt.Sprintf("player_angle: %f\n", player_angle), -1)
 	str = strings.Replace(str, "{{.player_velocity_x}}", fmt.Sprintf("player_velocity_x: %f\n", player_velocity_x), -1)
 	str = strings.Replace(str, "{{.player_velocity_y}}", fmt.Sprintf("player_velocity_y: %f\n", player_velocity_y), -1)
+	str = strings.Replace(str, "{{.bullet_count}}", fmt.Sprintf("bullet_count: %d\n", len(bullets)), -1)
 
 	if show_debug == 1 {
 		// Show debug info
