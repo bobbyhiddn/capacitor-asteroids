@@ -59,9 +59,12 @@ type Collider struct {
 }
 
 type Input struct {
-	Forward bool
 	Rotate  float64 // -1 for left, 1 for right
+	Forward bool
 	Shoot   bool
+	MouseX  int
+	MouseY  int
+	MousePressed bool
 }
 
 type Asteroid struct {

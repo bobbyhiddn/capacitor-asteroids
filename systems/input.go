@@ -6,6 +6,7 @@ import (
 	"github.com/samuel-pratt/ebiten-asteroids/components"
 	"github.com/samuel-pratt/ebiten-asteroids/ecs"
 	"github.com/samuel-pratt/ebiten-asteroids/game"
+	"math"
 	"math/rand"
 )
 
@@ -75,17 +76,38 @@ func (s *InputSystem) Update(dt float64) {
 			}
 		}
 
-		// Normal input handling
-		input.Rotate = 0
-		if ebiten.IsKeyPressed(ebiten.KeyLeft) || ebiten.IsKeyPressed(ebiten.KeyA) {
-			input.Rotate = -1
-		}
-		if ebiten.IsKeyPressed(ebiten.KeyRight) || ebiten.IsKeyPressed(ebiten.KeyD) {
-			input.Rotate = 1
+		// Get mouse position and state
+		input.MouseX, input.MouseY = ebiten.CursorPosition()
+		input.MousePressed = ebiten.IsMouseButtonPressed(ebiten.MouseButtonLeft)
+
+		// Get ship position for angle calculation
+		if pos, ok := s.world.Components["components.Position"][id].(components.Position); ok {
+			// Calculate angle to mouse
+			dx := float64(input.MouseX) - pos.X
+			dy := float64(input.MouseY) - pos.Y
+			targetAngle := math.Atan2(dy, dx)
+
+			// Get current rotation
+			if rot, ok := s.world.Components["components.Rotation"][id].(components.Rotation); ok {
+				// Calculate shortest rotation to target angle
+				diff := math.Mod(targetAngle-rot.Angle+math.Pi, 2*math.Pi) - math.Pi
+				if math.Abs(diff) > 0.1 { // Add some deadzone
+					if diff > 0 {
+						input.Rotate = 1
+					} else {
+						input.Rotate = -1
+					}
+				} else {
+					input.Rotate = 0
+				}
+			}
 		}
 
-		input.Forward = ebiten.IsKeyPressed(ebiten.KeyUp) || ebiten.IsKeyPressed(ebiten.KeyW)
-		input.Shoot = inpututil.IsKeyJustPressed(ebiten.KeySpace)
+		// Use mouse click for forward thrust
+		input.Forward = input.MousePressed
+
+		// Space or right click for shooting
+		input.Shoot = inpututil.IsKeyJustPressed(ebiten.KeySpace) || inpututil.IsMouseButtonJustPressed(ebiten.MouseButtonRight)
 
 		s.world.AddComponent(id, input)
 	}
