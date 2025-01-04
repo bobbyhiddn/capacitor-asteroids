@@ -4,201 +4,106 @@ import (
 	"fmt"
 	"image/color"
 	"log"
-	"math"
-	"strings"
+	"math/rand"
 	"time"
 
 	"github.com/hajimehoshi/ebiten/v2"
 	"github.com/hajimehoshi/ebiten/v2/ebitenutil"
+	"github.com/samuel-pratt/ebiten-asteroids/ecs"
+	"github.com/samuel-pratt/ebiten-asteroids/game"
+	"github.com/samuel-pratt/ebiten-asteroids/systems"
 )
 
-type Game struct{}
-
-type GameConfig struct {
-	WindowWidth  int `json:"window_width"`
-	WindowHeight int `json:"window_height"`
-}
-
-type Asteroid struct {
-	pos_x    float64
-	pos_y    float64
-	angle    float64
-	velocity float64
-	size     int
-}
-
-type Bullet struct {
-	pos_x       float64
-	pos_y       float64
-	angle       float64
-	origin_time time.Time
-}
-
-var (
-	// Window info
-	window_height int = 800
-	window_width  int = 1000
-
-	// Game states
-	key_states    map[ebiten.Key]int = map[ebiten.Key]int{}
-	show_debug    int                = 0
-	show_thruster int                = 0
-
-	// Entities
-	asteroids []*Asteroid
-	bullets   []*Bullet
-
-	// Player info
-	player_pos_x        float64 = 0
-	player_pos_y        float64 = 0
-	player_delta_x      float64 = 0
-	player_delta_y      float64 = 0
-	player_angle        float64 = 0
-	player_velocity_x   float64 = 0
-	player_velocity_y   float64 = 0
-	player_max_velocity float64 = 5
-
-	// Laser info
-	laser_velocity   float64       = 5
-	laser_fire_speed time.Duration = 750 // In milliseconds
-	laser_lifespan   time.Duration = 250 // In milliseconds
+const (
+	screenWidth  = 800
+	screenHeight = 600
+	
+	// Game settings
+	initialAsteroids = 4
+	asteroidSpawnInterval = 5 * time.Second
 )
+
+type Game struct {
+	world             *ecs.World
+	inputSystem       *systems.InputSystem
+	playerSystem      *systems.PlayerSystem
+	movementSystem    *systems.MovementSystem
+	collisionSystem   *systems.CollisionSystem
+	renderSystem      *systems.RenderSystem
+	asteroidSpawner   *systems.AsteroidSpawnerSystem
+	explosionSystem   *systems.ExplosionSystem
+	invulnerableSystem *systems.InvulnerableSystem
+}
+
+func NewGame() *Game {
+	g := &Game{
+		world:  ecs.NewWorld(),
+	}
+
+	// Create systems
+	g.inputSystem = systems.NewInputSystem(g.world)
+	g.playerSystem = systems.NewPlayerSystem(g.world)
+	g.movementSystem = systems.NewMovementSystem(g.world)
+	g.collisionSystem = systems.NewCollisionSystem(g.world)
+	g.renderSystem = systems.NewRenderSystem(g.world, ebiten.NewImage(screenWidth, screenHeight))
+	g.asteroidSpawner = systems.NewAsteroidSpawnerSystem(g.world)
+	g.explosionSystem = systems.NewExplosionSystem(g.world)
+	g.invulnerableSystem = systems.NewInvulnerableSystem(g.world)
+
+	g.world.AddSystem(g.inputSystem)
+	g.world.AddSystem(g.playerSystem)
+	g.world.AddSystem(g.movementSystem)
+	g.world.AddSystem(g.invulnerableSystem)
+	g.world.AddSystem(g.collisionSystem)
+	g.world.AddSystem(g.renderSystem)
+	g.world.AddSystem(g.asteroidSpawner)
+	g.world.AddSystem(g.explosionSystem)
+
+	// Create player ship
+	game.CreatePlayerShip(g.world, float64(screenWidth/2), float64(screenHeight/2))
+
+	// Create initial asteroids
+	for i := 0; i < initialAsteroids; i++ {
+		game.CreateAsteroid(g.world, rand.Intn(3))
+	}
+
+	return g
+}
 
 func (g *Game) Update() error {
-	KeyboardHandler()
+	dt := 1.0 / 60.0
 
-	if IsKeyTriggered(ebiten.KeyP) {
-		if show_debug == 0 {
-			show_debug = 1
-		} else {
-			show_debug = 0
-		}
-	}
-
-	// Loop player back to other side of screen
-	if player_pos_x > float64(window_width) {
-		player_pos_x = 0
-	}
-	if player_pos_y > float64(window_height) {
-		player_pos_y = 0
-	}
-	if player_pos_x < 0 {
-		player_pos_x = float64(window_width)
-	}
-	if player_pos_y < 0 {
-		player_pos_y = float64(window_height)
-	}
-
-	for _, a := range asteroids {
-		a.pos_x += a.velocity * math.Cos(a.angle) * float64(window_height/160)
-		a.pos_y += a.velocity * math.Sin(a.angle) * float64(window_height/160)
-	}
-
-	var new_bullets []*Bullet
-	for _, b := range bullets {
-		b.pos_x += laser_velocity * math.Cos(b.angle) * float64(window_height/160)
-		b.pos_y += laser_velocity * math.Sin(b.angle) * float64(window_height/160)
-		t := time.Now()
-		elapsed := t.Sub(b.origin_time)
-		if elapsed < laser_lifespan*time.Millisecond {
-			new_bullets = append(new_bullets, b)
-		}
-		if b.pos_x > float64(window_width) {
-			b.pos_x = 0
-		}
-		if b.pos_y > float64(window_height) {
-			b.pos_y = 0
-		}
-		if b.pos_x < 0 {
-			b.pos_x = float64(window_width)
-		}
-		if b.pos_y < 0 {
-			b.pos_y = float64(window_height)
-		}
-	}
-
-	bullets = new_bullets
-
-	player_pos_x = player_pos_x + player_velocity_x
-	player_pos_y = player_pos_y + player_velocity_y
-
-	player_velocity_x = player_velocity_x * 0.99
-	player_velocity_y = player_velocity_y * 0.99
+	g.inputSystem.Update(dt)
+	g.playerSystem.Update(dt)
+	g.movementSystem.Update(dt)
+	g.invulnerableSystem.Update(dt)
+	g.collisionSystem.Update(dt)
+	g.asteroidSpawner.Update(dt)
+	g.explosionSystem.Update(dt)
 
 	return nil
 }
 
 func (g *Game) Draw(screen *ebiten.Image) {
-	// Debug info
-	str := `{{.fps}}{{.player_pos_x}}{{.player_pos_y}}{{.player_delta_x}}{{.player_delta_y}}{{.player_angle}}{{.player_velocity_x}}{{.player_velocity_y}}{{.bullet_count}}`
-	str = strings.Replace(str, "{{.fps}}", fmt.Sprintf("FPS: %d\n", int(ebiten.CurrentFPS())), -1)
-	str = strings.Replace(str, "{{.player_pos_x}}", fmt.Sprintf("player_pos_x: %f\n", player_pos_x), -1)
-	str = strings.Replace(str, "{{.player_pos_y}}", fmt.Sprintf("player_pos_y: %f\n", player_pos_y), -1)
-	str = strings.Replace(str, "{{.player_delta_x}}", fmt.Sprintf("player_delta_x: %f\n", player_delta_x), -1)
-	str = strings.Replace(str, "{{.player_delta_y}}", fmt.Sprintf("player_delta_y: %f\n", player_delta_y), -1)
-	str = strings.Replace(str, "{{.player_angle}}", fmt.Sprintf("player_angle: %f\n", player_angle), -1)
-	str = strings.Replace(str, "{{.player_velocity_x}}", fmt.Sprintf("player_velocity_x: %f\n", player_velocity_x), -1)
-	str = strings.Replace(str, "{{.player_velocity_y}}", fmt.Sprintf("player_velocity_y: %f\n", player_velocity_y), -1)
-	str = strings.Replace(str, "{{.bullet_count}}", fmt.Sprintf("bullet_count: %d\n", len(bullets)), -1)
+	// Clear the screen
+	screen.Fill(color.Black)
 
-	if show_debug == 1 {
-		// Show debug info
-		ebitenutil.DebugPrint(screen, str)
-		// Show player point of rotation
-		ebitenutil.DrawRect(screen, player_pos_x, player_pos_y, 1, 1, color.White)
-	}
-
-	if show_thruster == 1 {
-		DrawThrusters(screen, player_pos_x, player_pos_y, player_angle)
-	}
-
-	DrawSpaceship(screen, player_pos_x, player_pos_y, player_angle)
-
-	for _, a := range asteroids {
-		if a.size == 0 {
-			DrawAsteroidSmall(screen, a.pos_x, a.pos_y, a.angle)
-		} else if a.size == 1 {
-			DrawAsteroidMedium(screen, a.pos_x, a.pos_y, a.angle)
-		} else if a.size == 2 {
-			DrawAsteroidLarge(screen, a.pos_x, a.pos_y, a.angle)
-		}
-	}
-
-	for _, b := range bullets {
-		DrawBullet(screen, b.pos_x, b.pos_y, b.angle)
-	}
+	// Draw the game onto the screen
+	g.renderSystem.Draw(screen)
+	ebitenutil.DebugPrint(screen, fmt.Sprintf("FPS: %0.2f", ebiten.CurrentFPS()))
 }
 
-func (g *Game) Layout(outsideWidth, outsideHeight int) (screenWidth, screenHeight int) {
-	return outsideWidth, outsideHeight
-}
-
-func IsKeyTriggered(key ebiten.Key) bool {
-	return key_states[key] == 1
+func (g *Game) Layout(outsideWidth, outsideHeight int) (int, int) {
+	return screenWidth, screenHeight
 }
 
 func main() {
-	// Init work
-	player_pos_x = float64(window_width) / 2
-	player_pos_y = float64(window_height) / 2
-	player_delta_x = math.Cos(player_angle) * float64(window_height/160)
-	player_delta_y = math.Sin(player_angle) * float64(window_height/160)
+	rand.Seed(time.Now().UnixNano())
 
-	// Test asteroid
-	asteroids = append(asteroids, &Asteroid{
-		pos_x:    30,
-		pos_y:    30,
-		angle:    1,
-		velocity: 0.5,
-		size:     2,
-	})
+	ebiten.SetWindowSize(screenWidth, screenHeight)
+	ebiten.SetWindowTitle("ECS Asteroids")
 
-	game := &Game{}
-
-	ebiten.SetWindowSize(window_width, window_height)
-	ebiten.SetWindowTitle("Ebiten Asteroids")
-
-	if err := ebiten.RunGame(game); err != nil {
+	if err := ebiten.RunGame(NewGame()); err != nil {
 		log.Fatal(err)
 	}
 }
