@@ -79,3 +79,7 @@ type Invulnerable struct {
 	Duration float64 // How long the invulnerability lasts
 	Timer    float64 // Current time left
 }
+
+type Bullet struct {
+	ShooterID int
+}

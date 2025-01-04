@@ -30,14 +30,15 @@ func CreatePlayerShip(world *ecs.World, x, y float64) ecs.EntityID {
 	return id
 }
 
-func CreateBullet(world *ecs.World, x, y, angle float64) ecs.EntityID {
+func CreateBullet(world *ecs.World, x, y, angle float64, shooterID ecs.EntityID) ecs.EntityID {
 	id := world.CreateEntity()
 
 	speed := 500.0
 	world.AddComponent(id, components.Position{X: x, Y: y})
 	world.AddComponent(id, components.Velocity{
-		DX: math.Cos(angle) * speed,
-		DY: math.Sin(angle) * speed,
+		DX:       math.Cos(angle) * speed,
+		DY:       math.Sin(angle) * speed,
+		MaxSpeed: speed,
 	})
 	world.AddComponent(id, components.Renderable{
 		Type:    components.RenderableTypeBullet,
@@ -52,40 +53,15 @@ func CreateBullet(world *ecs.World, x, y, angle float64) ecs.EntityID {
 		Radius: 2,
 		Type:   components.ColliderTypeBullet,
 	})
+	world.AddComponent(id, components.Bullet{
+		ShooterID: int(shooterID),
+	})
 
 	return id
 }
 
 func CreateAsteroid(world *ecs.World, size int) ecs.EntityID {
 	id := world.CreateEntity()
-
-	// Determine spawn position (off-screen)
-	var x, y float64
-	side := rand.Intn(4)
-	padding := float64(50) // Distance from screen edge
-
-	switch side {
-	case 0: // Top
-		x = rand.Float64() * float64(screenWidth)
-		y = -padding
-	case 1: // Right
-		x = float64(screenWidth) + padding
-		y = rand.Float64() * float64(screenHeight)
-	case 2: // Bottom
-		x = rand.Float64() * float64(screenWidth)
-		y = float64(screenHeight) + padding
-	case 3: // Left
-		x = -padding
-		y = rand.Float64() * float64(screenHeight)
-	}
-
-	// Random velocity towards screen center
-	centerX, centerY := float64(screenWidth/2), float64(screenHeight/2)
-	angle := math.Atan2(centerY-y, centerX-x)
-	speed := 50.0 + rand.Float64()*50.0 // Random speed between 50 and 100
-	
-	// Add some randomness to the angle
-	angle += (rand.Float64() - 0.5) * math.Pi/2
 
 	var scale float64
 	var radius float64
@@ -100,32 +76,32 @@ func CreateAsteroid(world *ecs.World, size int) ecs.EntityID {
 		radius = 20
 		maxSpeed = 200
 	case 2: // Large
-		scale = 1.5
-		radius = 30
-		maxSpeed = 150
+		scale = 2.0
+		radius = 40
+		maxSpeed = 100
 	}
 
-	world.AddComponent(id, components.Position{X: x, Y: y})
+	world.AddComponent(id, components.Position{X: 0, Y: 0})
 	world.AddComponent(id, components.Velocity{
-		DX:       math.Cos(angle) * speed,
-		DY:       math.Sin(angle) * speed,
+		DX: 0,
+		DY: 0,
 		MaxSpeed: maxSpeed,
 	})
 	world.AddComponent(id, components.Rotation{
-		Angle: rand.Float64() * math.Pi * 2,
-		RotationSpeed: (rand.Float64() - 0.5) * 0.02,
+		Angle:         rand.Float64() * math.Pi * 2,
+		RotationSpeed: (rand.Float64() - 0.5) * 2,
 	})
 	world.AddComponent(id, components.Renderable{
 		Type:    components.RenderableTypeAsteroid,
 		Scale:   scale,
 		Visible: true,
 	})
-	world.AddComponent(id, components.Asteroid{
-		Size: size,
-	})
 	world.AddComponent(id, components.Collider{
 		Radius: radius,
 		Type:   components.ColliderTypeAsteroid,
+	})
+	world.AddComponent(id, components.Asteroid{
+		Size: size,
 	})
 
 	return id

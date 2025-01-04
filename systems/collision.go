@@ -1,12 +1,12 @@
 package systems
 
 import (
+	"fmt"
+	"math"
+	"math/rand"
 	"github.com/samuel-pratt/ebiten-asteroids/components"
 	"github.com/samuel-pratt/ebiten-asteroids/ecs"
 	"github.com/samuel-pratt/ebiten-asteroids/game"
-	"math"
-	"math/rand"
-	"fmt"
 )
 
 type CollisionSystem struct {
@@ -18,53 +18,71 @@ func NewCollisionSystem(world *ecs.World) *CollisionSystem {
 }
 
 func (s *CollisionSystem) Update(dt float64) {
-	positions := s.world.Components["components.Position"]
 	colliders := s.world.Components["components.Collider"]
-	asteroids := s.world.Components["components.Asteroid"]
+	positions := s.world.Components["components.Position"]
 
-	// Check all pairs of entities with colliders
-	for id1, collider1Interface := range colliders {
-		collider1 := collider1Interface.(components.Collider)
-		pos1 := positions[id1].(components.Position)
+	// Create a list of all entities with colliders
+	var entities []ecs.EntityID
+	for id := range colliders {
+		entities = append(entities, id)
+	}
 
-		for id2, collider2Interface := range colliders {
-			if id1 >= id2 {
-				continue // Skip self and already checked pairs
+	// Check each pair of entities for collisions
+	for i := 0; i < len(entities); i++ {
+		id1 := entities[i]
+		pos1, ok1 := positions[id1].(components.Position)
+		col1, ok2 := colliders[id1].(components.Collider)
+		if !ok1 || !ok2 {
+			continue
+		}
+
+		for j := i + 1; j < len(entities); j++ {
+			id2 := entities[j]
+			pos2, ok1 := positions[id2].(components.Position)
+			col2, ok2 := colliders[id2].(components.Collider)
+			if !ok1 || !ok2 {
+				continue
 			}
 
-			collider2 := collider2Interface.(components.Collider)
-			pos2 := positions[id2].(components.Position)
-
-			// Check collision
-			dx := pos2.X - pos1.X
-			dy := pos2.Y - pos1.Y
+			// Calculate distance between entities
+			dx := pos1.X - pos2.X
+			dy := pos1.Y - pos2.Y
 			distance := math.Sqrt(dx*dx + dy*dy)
-			minDistance := collider1.Radius + collider2.Radius
 
-			if distance < minDistance {
-				// Handle asteroid-asteroid collisions
-				_, isAsteroid1 := asteroids[id1]
-				_, isAsteroid2 := asteroids[id2]
-				if isAsteroid1 && isAsteroid2 {
-					s.handleAsteroidCollision(id1, id2, pos1, pos2, collider1, collider2)
-					continue
-				}
+			// Check if collision occurred
+			if distance < col1.Radius+col2.Radius {
+				// Determine collision type
+				isAsteroid1 := col1.Type == components.ColliderTypeAsteroid
+				isAsteroid2 := col2.Type == components.ColliderTypeAsteroid
+				isShip1 := col1.Type == components.ColliderTypeShip
+				isShip2 := col2.Type == components.ColliderTypeShip
+				isBullet1 := col1.Type == components.ColliderTypeBullet
+				isBullet2 := col2.Type == components.ColliderTypeBullet
 
-				// Handle ship-asteroid collisions
-				if _, isShip := s.world.Components["components.Player"][id1]; isShip {
-					s.handleShipHit(id1)
-				} else if _, isShip := s.world.Components["components.Player"][id2]; isShip {
-					s.handleShipHit(id2)
-				}
+				// Handle different collision types
+				switch {
+				// Asteroid-Asteroid collisions
+				case isAsteroid1 && isAsteroid2:
+					s.handleAsteroidCollision(id1, id2, pos1, pos2, col1, col2)
 
-				// Handle bullet-asteroid collisions
-				if _, isBullet := s.world.Components["components.Bullet"][id1]; isBullet {
+				// Ship-Asteroid collisions
+				case isShip1 && isAsteroid2:
+					if !s.isInvulnerable(id1) {
+						s.handleShipHit(id1)
+					}
+				case isShip2 && isAsteroid1:
+					if !s.isInvulnerable(id2) {
+						s.handleShipHit(id2)
+					}
+
+				// Bullet-Asteroid collisions
+				case isBullet1 && isAsteroid2:
 					if shooter := s.findShooter(id1); shooter != 0 {
 						s.awardPoints(shooter, id2)
 					}
 					s.handleAsteroidHit(id2)
 					s.world.DestroyEntity(id1)
-				} else if _, isBullet := s.world.Components["components.Bullet"][id2]; isBullet {
+				case isBullet2 && isAsteroid1:
 					if shooter := s.findShooter(id2); shooter != 0 {
 						s.awardPoints(shooter, id1)
 					}
@@ -103,42 +121,50 @@ func (s *CollisionSystem) handleAsteroidCollision(id1, id2 ecs.EntityID, pos1, p
 		return
 	}
 
-	// Elastic collision with some energy loss (90% elastic)
-	restitution := 0.9
-	impulse := 2.0 * velAlongNormal * restitution
+	// Calculate collision response
+	restitution := 0.8 // Coefficient of restitution (0.8 = 80% energy conservation)
+	j := -(1.0 + restitution) * velAlongNormal
+	j *= 0.5 // Assuming equal masses
 
-	// Apply impulse
+	// Calculate new velocities
 	vel1New := components.Velocity{
-		DX:       vel1.DX + impulse*nx,
-		DY:       vel1.DY + impulse*ny,
+		DX:       vel1.DX - j*nx,
+		DY:       vel1.DY - j*ny,
 		MaxSpeed: vel1.MaxSpeed,
 	}
 	
 	vel2New := components.Velocity{
-		DX:       vel2.DX - impulse*nx,
-		DY:       vel2.DY - impulse*ny,
+		DX:       vel2.DX + j*nx,
+		DY:       vel2.DY + j*ny,
 		MaxSpeed: vel2.MaxSpeed,
 	}
 
-	// Add some random variation to prevent asteroids from getting stuck
-	randomAngle1 := rand.Float64() * math.Pi * 2
-	randomAngle2 := rand.Float64() * math.Pi * 2
-	randomForce := 20.0
+	// Add perpendicular impulse to create more interesting collisions
+	// This adds some angular momentum to the collision
+	tx := -ny // Tangent vector is perpendicular to normal
+	ty := nx
+	tangentImpulse := (rand.Float64() - 0.5) * 50.0
 
-	vel1New.DX += math.Cos(randomAngle1) * randomForce
-	vel1New.DY += math.Sin(randomAngle1) * randomForce
-	vel2New.DX += math.Cos(randomAngle2) * randomForce
-	vel2New.DY += math.Sin(randomAngle2) * randomForce
+	vel1New.DX += tx * tangentImpulse
+	vel1New.DY += ty * tangentImpulse
+	vel2New.DX -= tx * tangentImpulse
+	vel2New.DY -= ty * tangentImpulse
 
-	// Enforce minimum speed
+	// Enforce speed constraints for both asteroids
 	minSpeed := 100.0
 	for _, vel := range []*components.Velocity{&vel1New, &vel2New} {
 		speed := math.Sqrt(vel.DX*vel.DX + vel.DY*vel.DY)
+		
+		// Apply minimum speed
 		if speed < minSpeed {
 			scale := minSpeed / speed
 			vel.DX *= scale
 			vel.DY *= scale
-		} else if speed > vel.MaxSpeed {
+			continue // Skip max speed check if we just scaled up
+		}
+		
+		// Apply maximum speed
+		if speed > vel.MaxSpeed {
 			scale := vel.MaxSpeed / speed
 			vel.DX *= scale
 			vel.DY *= scale
@@ -228,33 +254,59 @@ func (s *CollisionSystem) handleAsteroidHit(asteroidID ecs.EntityID) {
 	}
 
 	pos := s.world.Components["components.Position"][asteroidID].(components.Position)
+	vel := s.world.Components["components.Velocity"][asteroidID].(components.Velocity)
+
+	// Create explosion effect
+	game.CreateExplosion(s.world, pos.X, pos.Y, float64(20+asteroid.Size*10))
 
 	// Destroy the hit asteroid
 	s.world.DestroyEntity(asteroidID)
 
 	// If it wasn't the smallest size, spawn two smaller asteroids
 	if asteroid.Size > 0 {
+		// Calculate base angle from current velocity
+		angle := math.Atan2(vel.DY, vel.DX)
+
 		for i := 0; i < 2; i++ {
 			newAsteroid := game.CreateAsteroid(s.world, asteroid.Size-1)
-			if newPos, ok := s.world.Components["components.Position"][newAsteroid].(components.Position); ok {
-				newPos.X = pos.X
-				newPos.Y = pos.Y
-				s.world.AddComponent(newAsteroid, newPos)
+			
+			// Position at split point
+			s.world.AddComponent(newAsteroid, components.Position{
+				X: pos.X,
+				Y: pos.Y,
+			})
+
+			// Calculate new velocity
+			splitAngle := angle
+			if i == 1 {
+				splitAngle = angle - math.Pi/3
+			} else {
+				splitAngle = angle + math.Pi/3
 			}
+
+			speed := math.Sqrt(vel.DX*vel.DX + vel.DY*vel.DY) * 1.5
+			s.world.AddComponent(newAsteroid, components.Velocity{
+				DX: math.Cos(splitAngle) * speed,
+				DY: math.Sin(splitAngle) * speed,
+				MaxSpeed: speed * 1.2,
+			})
 		}
 	}
 }
 
 func (s *CollisionSystem) findShooter(bulletID ecs.EntityID) ecs.EntityID {
-	// In this simple implementation, we assume there's only one player
-	// In a multiplayer game, you'd want to store the shooter's ID with the bullet
-	for id := range s.world.Components["components.Player"] {
-		return id
+	if bullet, ok := s.world.Components["components.Bullet"][bulletID].(components.Bullet); ok {
+		// Find player with matching ID
+		for id := range s.world.Components["components.Player"] {
+			if int(id) == bullet.ShooterID {
+				return id
+			}
+		}
 	}
 	return 0
 }
 
-func (s *CollisionSystem) awardPoints(playerID, asteroidID ecs.EntityID) {
+func (s *CollisionSystem) awardPoints(playerID ecs.EntityID, asteroidID ecs.EntityID) {
 	player, ok := s.world.Components["components.Player"][playerID].(components.Player)
 	if !ok {
 		return
@@ -266,17 +318,20 @@ func (s *CollisionSystem) awardPoints(playerID, asteroidID ecs.EntityID) {
 	}
 
 	// Award points based on asteroid size
-	// Small asteroids are worth more points
-	points := 0
 	switch asteroid.Size {
 	case 0: // Small
-		points = 100
+		player.Score += 100
 	case 1: // Medium
-		points = 50
+		player.Score += 50
 	case 2: // Large
-		points = 20
+		player.Score += 20
 	}
 
-	player.Score += points
+	// Update player score
 	s.world.AddComponent(playerID, player)
+}
+
+func (s *CollisionSystem) isInvulnerable(entityID ecs.EntityID) bool {
+	_, hasInvulnerable := s.world.Components["components.Invulnerable"][entityID]
+	return hasInvulnerable
 }

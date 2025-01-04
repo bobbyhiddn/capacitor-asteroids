@@ -50,8 +50,9 @@ func (s *PlayerSystem) Update(dt float64) {
 				// Apply velocity limits
 				speed := math.Sqrt(vel.DX*vel.DX + vel.DY*vel.DY)
 				if speed > vel.MaxSpeed {
-					vel.DX = (vel.DX / speed) * vel.MaxSpeed
-					vel.DY = (vel.DY / speed) * vel.MaxSpeed
+					scale := vel.MaxSpeed / speed
+					vel.DX *= scale
+					vel.DY *= scale
 				}
 
 				s.world.AddComponent(id, vel)
@@ -66,9 +67,13 @@ func (s *PlayerSystem) Update(dt float64) {
 			if input.Shoot {
 				if pos, ok := positions[id].(components.Position); ok {
 					if rot, ok := rotations[id].(components.Rotation); ok {
-						game.CreateBullet(s.world, pos.X, pos.Y, rot.Angle)
+						// Create bullet at ship's position with ship's rotation
+						game.CreateBullet(s.world, pos.X, pos.Y, rot.Angle, id)
 					}
 				}
+				// Reset shoot flag
+				input.Shoot = false
+				s.world.AddComponent(id, input)
 			}
 		}
 	}

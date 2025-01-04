@@ -32,7 +32,7 @@ func (s *InvulnerableSystem) Update(dt float64) {
 		
 		// Remove invulnerability when timer expires
 		if invulnerable.Timer <= 0 {
-			s.world.RemoveComponent(id, invulnerable)
+			s.world.RemoveComponent(id, "components.Invulnerable")
 			// Make sure ship is visible when invulnerability ends
 			if renderable, ok := renderables[id].(components.Renderable); ok {
 				renderable.Visible = true

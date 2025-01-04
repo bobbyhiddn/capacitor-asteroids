@@ -1,14 +1,12 @@
 package main
 
 import (
-	"fmt"
 	"image/color"
 	"log"
 	"math/rand"
 	"time"
 
 	"github.com/hajimehoshi/ebiten/v2"
-	"github.com/hajimehoshi/ebiten/v2/ebitenutil"
 	"github.com/samuel-pratt/ebiten-asteroids/ecs"
 	"github.com/samuel-pratt/ebiten-asteroids/game"
 	"github.com/samuel-pratt/ebiten-asteroids/systems"
@@ -17,27 +15,27 @@ import (
 const (
 	screenWidth  = 800
 	screenHeight = 600
-	
+
 	// Game settings
-	initialAsteroids = 4
+	initialAsteroids      = 4
 	asteroidSpawnInterval = 5 * time.Second
 )
 
 type Game struct {
-	world             *ecs.World
-	inputSystem       *systems.InputSystem
-	playerSystem      *systems.PlayerSystem
-	movementSystem    *systems.MovementSystem
-	collisionSystem   *systems.CollisionSystem
-	renderSystem      *systems.RenderSystem
-	asteroidSpawner   *systems.AsteroidSpawnerSystem
-	explosionSystem   *systems.ExplosionSystem
+	world              *ecs.World
+	inputSystem        *systems.InputSystem
+	playerSystem       *systems.PlayerSystem
+	movementSystem     *systems.MovementSystem
+	collisionSystem    *systems.CollisionSystem
+	renderSystem       *systems.RenderSystem
+	asteroidSpawner    *systems.AsteroidSpawnerSystem
+	explosionSystem    *systems.ExplosionSystem
 	invulnerableSystem *systems.InvulnerableSystem
 }
 
 func NewGame() *Game {
 	g := &Game{
-		world:  ecs.NewWorld(),
+		world: ecs.NewWorld(),
 	}
 
 	// Create systems
@@ -90,7 +88,6 @@ func (g *Game) Draw(screen *ebiten.Image) {
 
 	// Draw the game onto the screen
 	g.renderSystem.Draw(screen)
-	ebitenutil.DebugPrint(screen, fmt.Sprintf("FPS: %0.2f", ebiten.CurrentFPS()))
 }
 
 func (g *Game) Layout(outsideWidth, outsideHeight int) (int, int) {
