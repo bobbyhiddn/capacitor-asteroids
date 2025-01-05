@@ -14,14 +14,16 @@ import (
 )
 
 type RenderSystem struct {
-	world  *ecs.World
-	screen *ebiten.Image
+	world       *ecs.World
+	screen      *ebiten.Image
+	scoreSystem *ScoreSystem
 }
 
 func NewRenderSystem(world *ecs.World, screen *ebiten.Image) *RenderSystem {
 	return &RenderSystem{
-		world:  world,
-		screen: screen,
+		world:       world,
+		screen:      screen,
+		scoreSystem: NewScoreSystem(world),
 	}
 }
 
@@ -93,21 +95,44 @@ func (s *RenderSystem) Draw(screen *ebiten.Image) {
 		if p, ok := player.(components.Player); ok {
 			// Draw score
 			ebitenutil.DebugPrintAt(screen, fmt.Sprintf("Score: %d", p.Score), 10, 10)
-
 			// Draw lives
 			ebitenutil.DebugPrintAt(screen, fmt.Sprintf("Lives: %d", p.Lives), 10, 30)
 
+			// If game is over, draw high scores
+			if p.IsGameOver {
+				s.drawGameOver(screen, p.Score)
+			}
+
 			// Draw fire button (red dotted circle)
 			drawDottedCircle(screen, 60, float64(game.ScreenHeight-60), 40, color.RGBA{255, 0, 0, 255})
-
-			// Draw game over
-			if p.IsGameOver {
-				gameOverText := "GAME OVER - Press Any Key to Restart"
-				textWidth := len(gameOverText) * 6      // Approximate width of text
-				x := (game.ScreenWidth - textWidth) / 2 // Center horizontally
-				ebitenutil.DebugPrintAt(screen, gameOverText, x, 300)
-			}
-			break // Only show UI for first player
 		}
 	}
+}
+
+func (s *RenderSystem) drawGameOver(screen *ebiten.Image, currentScore int) {
+	centerX := game.ScreenWidth / 2
+	startY := game.ScreenHeight/2 - 100
+
+	// Draw Game Over text
+	gameOverText := "GAME OVER"
+	ebitenutil.DebugPrintAt(screen, gameOverText, centerX-30, startY)
+
+	// Draw current score
+	currentScoreText := fmt.Sprintf("Your Score: %d", currentScore)
+	ebitenutil.DebugPrintAt(screen, currentScoreText, centerX-40, startY+30)
+
+	// Draw high scores
+	ebitenutil.DebugPrintAt(screen, "HIGH SCORES", centerX-40, startY+60)
+
+	topScores := s.scoreSystem.GetTopScores()
+	for i, score := range topScores {
+		if i >= 5 { // Show only top 5 scores
+			break
+		}
+		scoreText := fmt.Sprintf("%d. %d pts", i+1, score.Value)
+		ebitenutil.DebugPrintAt(screen, scoreText, centerX-40, startY+90+i*20)
+	}
+
+	// Draw restart instruction
+	ebitenutil.DebugPrintAt(screen, "Press SPACE to restart", centerX-60, startY+200)
 }

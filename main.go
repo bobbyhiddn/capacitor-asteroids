@@ -33,6 +33,7 @@ type Game struct {
 	asteroidSpawner    *systems.AsteroidSpawnerSystem
 	explosionSystem    *systems.ExplosionSystem
 	invulnerableSystem *systems.InvulnerableSystem
+	scoreSystem        *systems.ScoreSystem
 }
 
 func NewGame() *Game {
@@ -49,6 +50,7 @@ func NewGame() *Game {
 	g.asteroidSpawner = systems.NewAsteroidSpawnerSystem(g.world)
 	g.explosionSystem = systems.NewExplosionSystem(g.world)
 	g.invulnerableSystem = systems.NewInvulnerableSystem(g.world)
+	g.scoreSystem = systems.NewScoreSystem(g.world)
 
 	g.world.AddSystem(g.inputSystem)
 	g.world.AddSystem(g.playerSystem)
@@ -58,6 +60,7 @@ func NewGame() *Game {
 	g.world.AddSystem(g.renderSystem)
 	g.world.AddSystem(g.asteroidSpawner)
 	g.world.AddSystem(g.explosionSystem)
+	g.world.AddSystem(g.scoreSystem)
 
 	// Create player ship
 	game.CreatePlayerShip(g.world, float64(screenWidth/2), float64(screenHeight/2))
@@ -94,6 +97,7 @@ func (g *Game) Update() error {
 	g.collisionSystem.Update(dt)
 	g.asteroidSpawner.Update(dt)
 	g.explosionSystem.Update(dt)
+	g.scoreSystem.Update(dt)
 
 	return nil
 }
