@@ -11,11 +11,15 @@ import (
 )
 
 type CollisionSystem struct {
-	world *ecs.World
+	world  *ecs.World
+	screen *game.Screen
 }
 
 func NewCollisionSystem(world *ecs.World) *CollisionSystem {
-	return &CollisionSystem{world: world}
+	return &CollisionSystem{
+		world:  world,
+		screen: game.NewScreen(),
+	}
 }
 
 func (s *CollisionSystem) Update(dt float64) {
@@ -194,12 +198,32 @@ func (s *CollisionSystem) handleAsteroidCollision(id1, id2 ecs.EntityID, pos1, p
 		pos2.X += nx * separation
 		pos2.Y += ny * separation
 
+		s.wrapPosition(&pos1)
+		s.wrapPosition(&pos2)
+
 		s.world.AddComponent(id1, pos1)
 		s.world.AddComponent(id2, pos2)
 	}
 
 	fmt.Printf("After collision - Asteroid 1: vel=(%f, %f), pos=(%f, %f)\n", vel1New.DX, vel1New.DY, pos1.X, pos1.Y)
 	fmt.Printf("After collision - Asteroid 2: vel=(%f, %f), pos=(%f, %f)\n", vel2New.DX, vel2New.DY, pos2.X, pos2.Y)
+}
+
+func (s *CollisionSystem) wrapPosition(pos *components.Position) {
+	width := float64(s.screen.Width())
+	height := float64(s.screen.Height())
+
+	if pos.X < 0 {
+		pos.X += width
+	} else if pos.X >= width {
+		pos.X -= width
+	}
+
+	if pos.Y < 0 {
+		pos.Y += height
+	} else if pos.Y >= height {
+		pos.Y -= height
+	}
 }
 
 func (s *CollisionSystem) handleShipHit(shipID ecs.EntityID) {
@@ -252,8 +276,9 @@ func (s *CollisionSystem) handleShipHit(shipID ecs.EntityID) {
 	s.world.AddComponent(shipID, components.Rotation{})
 
 	// Move ship back to center and make invulnerable
-	pos.X = float64(game.ScreenWidth / 2)
-	pos.Y = float64(game.ScreenHeight / 2)
+	pos.X = s.screen.CenterX()
+	pos.Y = s.screen.CenterY()
+	s.wrapPosition(&pos)
 	s.world.AddComponent(shipID, pos)
 
 	// Add invulnerability

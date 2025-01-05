@@ -16,6 +16,7 @@ import (
 type RenderSystem struct {
 	world       *ecs.World
 	screen      *ebiten.Image
+	gameScreen  *game.Screen
 	scoreSystem *ScoreSystem
 }
 
@@ -23,6 +24,7 @@ func NewRenderSystem(world *ecs.World, screen *ebiten.Image) *RenderSystem {
 	return &RenderSystem{
 		world:       world,
 		screen:      screen,
+		gameScreen:  game.NewScreen(),
 		scoreSystem: NewScoreSystem(world),
 	}
 }
@@ -104,25 +106,25 @@ func (s *RenderSystem) Draw(screen *ebiten.Image) {
 			}
 
 			// Draw fire button (red dotted circle)
-			drawDottedCircle(screen, 60, float64(game.ScreenHeight-60), 40, color.RGBA{255, 0, 0, 255})
+			drawDottedCircle(screen, 60, float64(s.gameScreen.Height()-60), 40, color.RGBA{255, 0, 0, 255})
 		}
 	}
 }
 
 func (s *RenderSystem) drawGameOver(screen *ebiten.Image, currentScore int) {
-	centerX := game.ScreenWidth / 2
-	startY := game.ScreenHeight/2 - 100
+	centerX := s.gameScreen.CenterX()
+	startY := s.gameScreen.CenterY() - 100
 
 	// Draw Game Over text
 	gameOverText := "GAME OVER"
-	ebitenutil.DebugPrintAt(screen, gameOverText, centerX-30, startY)
+	ebitenutil.DebugPrintAt(screen, gameOverText, int(centerX)-30, int(startY))
 
 	// Draw current score
 	currentScoreText := fmt.Sprintf("Your Score: %d", currentScore)
-	ebitenutil.DebugPrintAt(screen, currentScoreText, centerX-40, startY+30)
+	ebitenutil.DebugPrintAt(screen, currentScoreText, int(centerX)-40, int(startY)+30)
 
 	// Draw high scores
-	ebitenutil.DebugPrintAt(screen, "HIGH SCORES", centerX-40, startY+60)
+	ebitenutil.DebugPrintAt(screen, "HIGH SCORES", int(centerX)-40, int(startY)+60)
 
 	topScores := s.scoreSystem.GetTopScores()
 	for i, score := range topScores {
@@ -130,9 +132,9 @@ func (s *RenderSystem) drawGameOver(screen *ebiten.Image, currentScore int) {
 			break
 		}
 		scoreText := fmt.Sprintf("%d. %d pts", i+1, score.Value)
-		ebitenutil.DebugPrintAt(screen, scoreText, centerX-40, startY+90+i*20)
+		ebitenutil.DebugPrintAt(screen, scoreText, int(centerX)-40, int(startY)+90+i*20)
 	}
 
 	// Draw restart instruction
-	ebitenutil.DebugPrintAt(screen, "Press SPACE to restart", centerX-60, startY+200)
+	ebitenutil.DebugPrintAt(screen, "Press SPACE to restart", int(centerX)-60, int(startY)+200)
 }

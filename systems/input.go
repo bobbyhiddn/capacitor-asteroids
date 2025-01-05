@@ -8,17 +8,20 @@ import (
 	"github.com/bobbyhiddn/ecs-asteroids/components"
 	"github.com/bobbyhiddn/ecs-asteroids/ecs"
 	"github.com/bobbyhiddn/ecs-asteroids/game"
-	"github.com/bobbyhiddn/ecs-asteroids/utils"
 	"github.com/hajimehoshi/ebiten/v2"
 	"github.com/hajimehoshi/ebiten/v2/inpututil"
 )
 
 type InputSystem struct {
-	world *ecs.World
+	world  *ecs.World
+	screen *game.Screen
 }
 
 func NewInputSystem(world *ecs.World) *InputSystem {
-	return &InputSystem{world: world}
+	return &InputSystem{
+		world:  world,
+		screen: game.NewScreen(),
+	}
 }
 
 func (s *InputSystem) Update(dt float64) {
@@ -59,7 +62,8 @@ func (s *InputSystem) Update(dt float64) {
 			input.MousePressed = true
 
 			// Check if touch is within the fire button area
-			if utils.IsPointInCircle(float64(x), float64(y), 60, float64(game.ScreenHeight-60), 40) {
+			fireButtonY := s.screen.Height() - 60
+			if x >= 20 && x <= 100 && y >= fireButtonY-40 && y <= fireButtonY+40 {
 				// Only shoot if this is a new touch
 				for _, justPressedID := range justPressedTouchIDs {
 					if touchID == justPressedID {
@@ -81,7 +85,8 @@ func (s *InputSystem) Update(dt float64) {
 				input.MouseY = y
 				input.MousePressed = true
 
-				if utils.IsPointInCircle(float64(x), float64(y), 60, float64(game.ScreenHeight-60), 40) {
+				fireButtonY := s.screen.Height() - 60
+				if x >= 20 && x <= 100 && y >= fireButtonY-40 && y <= fireButtonY+40 {
 					// Only shoot if mouse button was just pressed
 					input.Shoot = inpututil.IsMouseButtonJustPressed(ebiten.MouseButtonLeft)
 				} else {
@@ -136,8 +141,8 @@ func (s *InputSystem) handleGameRestart(id ecs.EntityID, player *components.Play
 
 	// Add position component
 	s.world.AddComponent(id, components.Position{
-		X: float64(game.ScreenWidth / 2),
-		Y: float64(game.ScreenHeight / 2),
+		X: float64(s.screen.Width() / 2),
+		Y: float64(s.screen.Height() / 2),
 	})
 
 	// Add velocity component

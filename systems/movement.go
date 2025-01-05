@@ -11,11 +11,15 @@ const (
 )
 
 type MovementSystem struct {
-	world *ecs.World
+	world  *ecs.World
+	screen *game.Screen
 }
 
 func NewMovementSystem(world *ecs.World) *MovementSystem {
-	return &MovementSystem{world: world}
+	return &MovementSystem{
+		world:  world,
+		screen: game.NewScreen(),
+	}
 }
 
 func (s *MovementSystem) Update(dt float64) {
@@ -43,12 +47,11 @@ func (s *MovementSystem) Update(dt float64) {
 		// Handle screen wrapping or off-screen destruction
 		if _, isPlayer := s.world.Components["components.Player"][id]; isPlayer {
 			// Wrap player position around screen edges
-			pos.X = wrapCoordinate(pos.X, game.ScreenWidth)
-			pos.Y = wrapCoordinate(pos.Y, game.ScreenHeight)
+			s.wrapPosition(&pos)
 			positionUpdated = true
 		} else {
 			// For non-player entities, destroy them if they go too far off screen
-			if isOffScreen(pos.X, pos.Y) {
+			if s.isOffScreen(pos) {
 				s.world.DestroyEntity(id)
 				continue
 			}
@@ -61,16 +64,23 @@ func (s *MovementSystem) Update(dt float64) {
 	}
 }
 
-func wrapCoordinate(pos float64, max float64) float64 {
-	if pos < 0 {
-		return pos + max
+func (s *MovementSystem) wrapPosition(pos *components.Position) {
+	width := float64(s.screen.Width())
+	height := float64(s.screen.Height())
+
+	if pos.X < 0 {
+		pos.X += width
+	} else if pos.X >= width {
+		pos.X -= width
 	}
-	if pos >= max {
-		return pos - max
+
+	if pos.Y < 0 {
+		pos.Y += height
+	} else if pos.Y >= height {
+		pos.Y -= height
 	}
-	return pos
 }
 
-func isOffScreen(x, y float64) bool {
-	return x < -padding || x > game.ScreenWidth+padding || y < -padding || y > game.ScreenHeight+padding
+func (s *MovementSystem) isOffScreen(pos components.Position) bool {
+	return pos.X < 0 || pos.X > float64(s.screen.Width()) || pos.Y < 0 || pos.Y > float64(s.screen.Height())
 }

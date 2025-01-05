@@ -3,6 +3,7 @@ package systems
 import (
 	"math"
 	"math/rand"
+	"time"
 
 	"github.com/bobbyhiddn/ecs-asteroids/components"
 	"github.com/bobbyhiddn/ecs-asteroids/ecs"
@@ -18,19 +19,22 @@ const (
 )
 
 type AsteroidSpawnerSystem struct {
-	world          *ecs.World
-	timeSinceSpawn float64
+	world        *ecs.World
+	screen       *game.Screen
+	lastSpawnTime time.Time
 }
 
 func NewAsteroidSpawnerSystem(world *ecs.World) *AsteroidSpawnerSystem {
 	return &AsteroidSpawnerSystem{
-		world:          world,
-		timeSinceSpawn: 0,
+		world:        world,
+		screen:       game.NewScreen(),
+		lastSpawnTime: time.Now(),
 	}
 }
 
 func (s *AsteroidSpawnerSystem) Update(dt float64) {
-	s.timeSinceSpawn += dt
+	currentTime := time.Now()
+	elapsedTime := currentTime.Sub(s.lastSpawnTime).Seconds()
 
 	// Count current asteroids
 	asteroidCount := 0
@@ -44,44 +48,41 @@ func (s *AsteroidSpawnerSystem) Update(dt float64) {
 	}
 
 	// Spawn new asteroid if conditions are met
-	if s.timeSinceSpawn >= minSpawnInterval && asteroidCount < maxAsteroids {
+	if elapsedTime >= minSpawnInterval && asteroidCount < maxAsteroids {
 		s.spawnAsteroid()
-		s.timeSinceSpawn = 0
+		s.lastSpawnTime = currentTime
 	}
 }
 
 func (s *AsteroidSpawnerSystem) spawnAsteroid() {
-	// Randomly choose which edge to spawn from (0=top, 1=right, 2=bottom, 3=left)
-	edge := rand.Intn(4)
+	// Randomly choose a side of the screen to spawn from
+	side := rand.Intn(4)
 	var x, y float64
 
-	switch edge {
+	switch side {
 	case 0: // Top
-		x = rand.Float64() * float64(game.ScreenWidth)
-		y = -spawnPadding
+		x = float64(rand.Intn(s.screen.Width()))
+		y = 0
 	case 1: // Right
-		x = float64(game.ScreenWidth) + spawnPadding
-		y = rand.Float64() * float64(game.ScreenHeight)
+		x = float64(s.screen.Width())
+		y = float64(rand.Intn(s.screen.Height()))
 	case 2: // Bottom
-		x = rand.Float64() * float64(game.ScreenWidth)
-		y = float64(game.ScreenHeight) + spawnPadding
+		x = float64(rand.Intn(s.screen.Width()))
+		y = float64(s.screen.Height())
 	case 3: // Left
-		x = -spawnPadding
-		y = rand.Float64() * float64(game.ScreenHeight)
+		x = 0
+		y = float64(rand.Intn(s.screen.Height()))
 	}
 
-	// Create a large asteroid
-	asteroid := game.CreateAsteroid(s.world, 2)
+	// Create asteroid at random size (0-2)
+	size := rand.Intn(3)
+	asteroid := game.CreateAsteroid(s.world, size)
 
 	// Set its position
 	s.world.AddComponent(asteroid, components.Position{X: x, Y: y})
 
 	// Calculate velocity towards screen center with some randomness
-	centerX := float64(game.ScreenWidth) / 2
-	centerY := float64(game.ScreenHeight) / 2
-
-	// Base angle towards center
-	angle := math.Atan2(centerY-y, centerX-x)
+	angle := math.Atan2(s.screen.CenterY()-y, s.screen.CenterX()-x)
 
 	// Add randomness to angle (±45 degrees)
 	angle += (rand.Float64() - 0.5) * math.Pi / 2

@@ -15,15 +15,13 @@ import (
 )
 
 const (
-	screenWidth  = 800
-	screenHeight = 600
-
 	// Game settings
 	initialAsteroids      = 4
 	asteroidSpawnInterval = 5 * time.Second
 )
 
 type Game struct {
+	screen             *game.Screen
 	world              *ecs.World
 	inputSystem        *systems.InputSystem
 	playerSystem       *systems.PlayerSystem
@@ -38,7 +36,8 @@ type Game struct {
 
 func NewGame() *Game {
 	g := &Game{
-		world: ecs.NewWorld(),
+		screen: game.NewScreen(),
+		world:  ecs.NewWorld(),
 	}
 
 	// Create systems
@@ -46,7 +45,7 @@ func NewGame() *Game {
 	g.playerSystem = systems.NewPlayerSystem(g.world)
 	g.movementSystem = systems.NewMovementSystem(g.world)
 	g.collisionSystem = systems.NewCollisionSystem(g.world)
-	g.renderSystem = systems.NewRenderSystem(g.world, ebiten.NewImage(screenWidth, screenHeight))
+	g.renderSystem = systems.NewRenderSystem(g.world, ebiten.NewImage(g.screen.Width(), g.screen.Height()))
 	g.asteroidSpawner = systems.NewAsteroidSpawnerSystem(g.world)
 	g.explosionSystem = systems.NewExplosionSystem(g.world)
 	g.invulnerableSystem = systems.NewInvulnerableSystem(g.world)
@@ -63,7 +62,7 @@ func NewGame() *Game {
 	g.world.AddSystem(g.scoreSystem)
 
 	// Create player ship
-	game.CreatePlayerShip(g.world, float64(screenWidth/2), float64(screenHeight/2))
+	game.CreatePlayerShip(g.world, g.screen.CenterX(), g.screen.CenterY())
 
 	// Create initial asteroids
 	for i := 0; i < initialAsteroids; i++ {
@@ -111,13 +110,14 @@ func (g *Game) Draw(screen *ebiten.Image) {
 }
 
 func (g *Game) Layout(outsideWidth, outsideHeight int) (int, int) {
-	return screenWidth, screenHeight
+	return g.screen.Width(), g.screen.Height()
 }
 
 func main() {
 	rand.Seed(time.Now().UnixNano())
 
-	ebiten.SetWindowSize(screenWidth, screenHeight)
+	screen := game.NewScreen()
+	ebiten.SetWindowSize(screen.Width(), screen.Height())
 	ebiten.SetWindowTitle("ECS Asteroids")
 
 	if err := ebiten.RunGame(NewGame()); err != nil {
