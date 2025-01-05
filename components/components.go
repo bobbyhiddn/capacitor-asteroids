@@ -2,6 +2,7 @@ package components
 
 import (
 	"time"
+	"image/color"
 )
 
 type Position struct {
@@ -85,4 +86,10 @@ type Invulnerable struct {
 
 type Bullet struct {
 	ShooterID int
+}
+
+// UI button component
+type UIButton struct {
+	X, Y, Width, Height int
+	Color              color.Color
 }

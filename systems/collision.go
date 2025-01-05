@@ -96,8 +96,17 @@ func (s *CollisionSystem) Update(dt float64) {
 
 func (s *CollisionSystem) handleAsteroidCollision(id1, id2 ecs.EntityID, pos1, pos2 components.Position, col1, col2 components.Collider) {
 	// Get velocities
-	vel1 := s.world.Components["components.Velocity"][id1].(components.Velocity)
-	vel2 := s.world.Components["components.Velocity"][id2].(components.Velocity)
+	vel1Interface := s.world.Components["components.Velocity"][id1]
+	vel2Interface := s.world.Components["components.Velocity"][id2]
+	
+	// Check if velocities exist
+	if vel1Interface == nil || vel2Interface == nil {
+		// One of the asteroids was probably already destroyed
+		return
+	}
+	
+	vel1 := vel1Interface.(components.Velocity)
+	vel2 := vel2Interface.(components.Velocity)
 
 	fmt.Printf("Before collision - Asteroid 1: vel=(%f, %f), pos=(%f, %f)\n", vel1.DX, vel1.DY, pos1.X, pos1.Y)
 	fmt.Printf("Before collision - Asteroid 2: vel=(%f, %f), pos=(%f, %f)\n", vel2.DX, vel2.DY, pos2.X, pos2.Y)
@@ -216,6 +225,20 @@ func (s *CollisionSystem) handleShipHit(shipID ecs.EntityID) {
 	if player.Lives <= 0 {
 		player.IsGameOver = true
 		player.Lives = 0 // Ensure it doesn't go negative
+
+		// Update player component
+		s.world.AddComponent(shipID, player)
+
+		// Remove all components except Player and Input to effectively disable the ship
+		// but keep the player state for restart
+		for componentName, components := range s.world.Components {
+			if componentName != "components.Player" && componentName != "components.Input" {
+				if _, exists := components[shipID]; exists {
+					delete(s.world.Components[componentName], shipID)
+				}
+			}
+		}
+		return
 	}
 
 	// Update player component
@@ -227,24 +250,16 @@ func (s *CollisionSystem) handleShipHit(shipID ecs.EntityID) {
 	// Reset rotation
 	s.world.AddComponent(shipID, components.Rotation{})
 
-	// If not game over, move ship back to center and make invulnerable
-	if !player.IsGameOver {
-		pos.X = float64(game.ScreenWidth / 2)
-		pos.Y = float64(game.ScreenHeight / 2)
-		s.world.AddComponent(shipID, pos)
+	// Move ship back to center and make invulnerable
+	pos.X = float64(game.ScreenWidth / 2)
+	pos.Y = float64(game.ScreenHeight / 2)
+	s.world.AddComponent(shipID, pos)
 
-		// Add invulnerability
-		s.world.AddComponent(shipID, components.Invulnerable{
-			Duration: 3.0, // 3 seconds of invulnerability
-			Timer: 3.0,
-		})
-	} else {
-		// Make ship invisible on game over
-		if renderable, ok := s.world.Components["components.Renderable"][shipID].(components.Renderable); ok {
-			renderable.Visible = false
-			s.world.AddComponent(shipID, renderable)
-		}
-	}
+	// Add invulnerability
+	s.world.AddComponent(shipID, components.Invulnerable{
+		Duration: 3.0, // 3 seconds of invulnerability
+		Timer: 3.0,
+	})
 }
 
 func (s *CollisionSystem) handleAsteroidHit(asteroidID ecs.EntityID) {

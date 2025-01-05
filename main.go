@@ -2,11 +2,13 @@ package main
 
 import (
 	"image/color"
+	"fmt"
 	"log"
 	"math/rand"
 	"time"
 
 	"github.com/hajimehoshi/ebiten/v2"
+	"github.com/samuel-pratt/ebiten-asteroids/components"
 	"github.com/samuel-pratt/ebiten-asteroids/ecs"
 	"github.com/samuel-pratt/ebiten-asteroids/game"
 	"github.com/samuel-pratt/ebiten-asteroids/systems"
@@ -71,7 +73,21 @@ func NewGame() *Game {
 func (g *Game) Update() error {
 	dt := 1.0 / 60.0
 
+	// Always update input system to check for restart
 	g.inputSystem.Update(dt)
+
+	// Get player state
+	players := g.world.Components["components.Player"]
+	for _, playerInterface := range players {
+		player := playerInterface.(components.Player)
+		if player.IsGameOver {
+			fmt.Printf("Game is over, waiting for restart input...\n")
+			// Only update input system during game over
+			return nil
+		}
+	}
+
+	// Update all systems when game is active
 	g.playerSystem.Update(dt)
 	g.movementSystem.Update(dt)
 	g.invulnerableSystem.Update(dt)
@@ -96,7 +112,7 @@ func (g *Game) Layout(outsideWidth, outsideHeight int) (int, int) {
 
 func main() {
 	rand.Seed(time.Now().UnixNano())
-
+	
 	ebiten.SetWindowSize(screenWidth, screenHeight)
 	ebiten.SetWindowTitle("ECS Asteroids")
 

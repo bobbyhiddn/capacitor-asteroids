@@ -8,6 +8,8 @@ import (
 	"github.com/samuel-pratt/ebiten-asteroids/ecs"
 	"github.com/samuel-pratt/ebiten-asteroids/game"
 	"github.com/samuel-pratt/ebiten-asteroids/render"
+	"image/color"
+	"math"
 )
 
 type RenderSystem struct {
@@ -24,6 +26,23 @@ func NewRenderSystem(world *ecs.World, screen *ebiten.Image) *RenderSystem {
 
 func (s *RenderSystem) Update(dt float64) {
 	// No update logic needed for rendering
+}
+
+func drawDottedCircle(screen *ebiten.Image, x, y, radius float64, c color.Color) {
+	numSegments := 16 // Reduced for larger dots
+	for i := 0; i < numSegments; i++ {
+		angle := float64(i) * 2 * math.Pi / float64(numSegments)
+		nextAngle := float64(i+1) * 2 * math.Pi / float64(numSegments)
+		
+		// Only draw every other segment for dotted effect
+		if i%2 == 0 {
+			x1 := x + radius*math.Cos(angle)
+			y1 := y + radius*math.Sin(angle)
+			x2 := x + radius*math.Cos(nextAngle)
+			y2 := y + radius*math.Sin(nextAngle)
+			ebitenutil.DrawLine(screen, x1, y1, x2, y2, c)
+		}
+	}
 }
 
 func (s *RenderSystem) Draw(screen *ebiten.Image) {
@@ -76,6 +95,9 @@ func (s *RenderSystem) Draw(screen *ebiten.Image) {
 			
 			// Draw lives
 			ebitenutil.DebugPrintAt(screen, fmt.Sprintf("Lives: %d", p.Lives), 10, 30)
+			
+			// Draw fire button (red dotted circle)
+			drawDottedCircle(screen, 60, float64(game.ScreenHeight-60), 40, color.RGBA{255, 0, 0, 255})
 			
 			// Draw game over
 			if p.IsGameOver {
