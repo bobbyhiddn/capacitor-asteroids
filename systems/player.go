@@ -9,7 +9,7 @@ import (
 )
 
 const (
-	thrustForce   = 150.0
+	thrustForce   = 250.0
 	rotationSpeed = 0.1
 )
 
