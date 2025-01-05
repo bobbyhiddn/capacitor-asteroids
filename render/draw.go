@@ -4,9 +4,9 @@ import (
 	"image/color"
 	"math"
 
+	"github.com/bobbyhiddn/ecs-asteroids/components"
 	"github.com/hajimehoshi/ebiten/v2"
 	"github.com/hajimehoshi/ebiten/v2/ebitenutil"
-	"github.com/samuel-pratt/ebiten-asteroids/components"
 )
 
 const (

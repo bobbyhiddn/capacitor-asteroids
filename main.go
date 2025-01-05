@@ -1,17 +1,17 @@
 package main
 
 import (
-	"image/color"
 	"fmt"
+	"image/color"
 	"log"
 	"math/rand"
 	"time"
 
+	"github.com/bobbyhiddn/ecs-asteroids/components"
+	"github.com/bobbyhiddn/ecs-asteroids/ecs"
+	"github.com/bobbyhiddn/ecs-asteroids/game"
+	"github.com/bobbyhiddn/ecs-asteroids/systems"
 	"github.com/hajimehoshi/ebiten/v2"
-	"github.com/samuel-pratt/ebiten-asteroids/components"
-	"github.com/samuel-pratt/ebiten-asteroids/ecs"
-	"github.com/samuel-pratt/ebiten-asteroids/game"
-	"github.com/samuel-pratt/ebiten-asteroids/systems"
 )
 
 const (
@@ -112,7 +112,7 @@ func (g *Game) Layout(outsideWidth, outsideHeight int) (int, int) {
 
 func main() {
 	rand.Seed(time.Now().UnixNano())
-	
+
 	ebiten.SetWindowSize(screenWidth, screenHeight)
 	ebiten.SetWindowTitle("ECS Asteroids")
 

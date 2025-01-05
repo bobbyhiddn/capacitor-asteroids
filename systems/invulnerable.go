@@ -1,8 +1,8 @@
 package systems
 
 import (
-	"github.com/samuel-pratt/ebiten-asteroids/components"
-	"github.com/samuel-pratt/ebiten-asteroids/ecs"
+	"github.com/bobbyhiddn/ecs-asteroids/components"
+	"github.com/bobbyhiddn/ecs-asteroids/ecs"
 )
 
 type InvulnerableSystem struct {
@@ -19,17 +19,17 @@ func (s *InvulnerableSystem) Update(dt float64) {
 
 	for id, invulnerableInterface := range invulnerables {
 		invulnerable := invulnerableInterface.(components.Invulnerable)
-		
+
 		// Update timer
 		invulnerable.Timer -= dt
-		
+
 		// Handle blinking effect
 		if renderable, ok := renderables[id].(components.Renderable); ok {
 			// Blink 4 times per second
 			renderable.Visible = int(invulnerable.Timer*4)%2 == 0
 			s.world.AddComponent(id, renderable)
 		}
-		
+
 		// Remove invulnerability when timer expires
 		if invulnerable.Timer <= 0 {
 			s.world.RemoveComponent(id, "components.Invulnerable")
@@ -40,7 +40,7 @@ func (s *InvulnerableSystem) Update(dt float64) {
 			}
 			continue
 		}
-		
+
 		s.world.AddComponent(id, invulnerable)
 	}
 }

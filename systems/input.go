@@ -4,12 +4,13 @@ import (
 	"fmt"
 	"math"
 	"math/rand"
+
+	"github.com/bobbyhiddn/ecs-asteroids/components"
+	"github.com/bobbyhiddn/ecs-asteroids/ecs"
+	"github.com/bobbyhiddn/ecs-asteroids/game"
+	"github.com/bobbyhiddn/ecs-asteroids/utils"
 	"github.com/hajimehoshi/ebiten/v2"
 	"github.com/hajimehoshi/ebiten/v2/inpututil"
-	"github.com/samuel-pratt/ebiten-asteroids/components"
-	"github.com/samuel-pratt/ebiten-asteroids/ecs"
-	"github.com/samuel-pratt/ebiten-asteroids/game"
-	"github.com/samuel-pratt/ebiten-asteroids/utils"
 )
 
 type InputSystem struct {
@@ -31,9 +32,9 @@ func (s *InputSystem) Update(dt float64) {
 		// Check for game over restart
 		if player.IsGameOver {
 			// Check for any key press or new touch/click
-			if len(inpututil.AppendPressedKeys(nil)) > 0 || 
-			   len(inpututil.AppendJustPressedTouchIDs(nil)) > 0 ||
-			   inpututil.IsMouseButtonJustPressed(ebiten.MouseButtonLeft) {
+			if len(inpututil.AppendPressedKeys(nil)) > 0 ||
+				len(inpututil.AppendJustPressedTouchIDs(nil)) > 0 ||
+				inpututil.IsMouseButtonJustPressed(ebiten.MouseButtonLeft) {
 				fmt.Printf("Input detected during game over, restarting...\n")
 				s.handleGameRestart(id, &player)
 				continue
@@ -50,7 +51,7 @@ func (s *InputSystem) Update(dt float64) {
 		// Process multitouch inputs
 		touchIDs := ebiten.TouchIDs()
 		justPressedTouchIDs := inpututil.AppendJustPressedTouchIDs(nil)
-		
+
 		for _, touchID := range touchIDs {
 			x, y := ebiten.TouchPosition(touchID)
 			input.MouseX = x
@@ -141,8 +142,8 @@ func (s *InputSystem) handleGameRestart(id ecs.EntityID, player *components.Play
 
 	// Add velocity component
 	s.world.AddComponent(id, components.Velocity{
-		DX: 0,
-		DY: 0,
+		DX:       0,
+		DY:       0,
 		MaxSpeed: 400,
 	})
 
@@ -158,7 +159,7 @@ func (s *InputSystem) handleGameRestart(id ecs.EntityID, player *components.Play
 
 	// Add collider component
 	s.world.AddComponent(id, components.Collider{
-		Type: components.ColliderTypeShip,
+		Type:   components.ColliderTypeShip,
 		Radius: 20,
 	})
 

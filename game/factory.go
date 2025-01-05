@@ -5,8 +5,9 @@ import (
 	"math"
 	"math/rand"
 	"time"
-	"github.com/samuel-pratt/ebiten-asteroids/components"
-	"github.com/samuel-pratt/ebiten-asteroids/ecs"
+
+	"github.com/bobbyhiddn/ecs-asteroids/components"
+	"github.com/bobbyhiddn/ecs-asteroids/ecs"
 )
 
 const (
@@ -83,8 +84,8 @@ func CreateAsteroid(world *ecs.World, size int) ecs.EntityID {
 
 	world.AddComponent(id, components.Position{X: 0, Y: 0})
 	world.AddComponent(id, components.Velocity{
-		DX: 0,
-		DY: 0,
+		DX:       0,
+		DY:       0,
 		MaxSpeed: maxSpeed,
 	})
 	world.AddComponent(id, components.Rotation{
@@ -117,10 +118,10 @@ func CreateExplosion(world *ecs.World, x, y float64, size float64) ecs.EntityID 
 		Visible: true,
 	})
 	world.AddComponent(id, components.Explosion{
-		Age:     0,
-		MaxAge:  0.5, // Explosion lasts 0.5 seconds
-		Radius:  size,
-		Pieces:  12,  // Number of particles in explosion
+		Age:    0,
+		MaxAge: 0.5, // Explosion lasts 0.5 seconds
+		Radius: size,
+		Pieces: 12, // Number of particles in explosion
 	})
 
 	return id

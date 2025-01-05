@@ -1,9 +1,9 @@
 package systems
 
 import (
-	"github.com/samuel-pratt/ebiten-asteroids/components"
-	"github.com/samuel-pratt/ebiten-asteroids/ecs"
-	"github.com/samuel-pratt/ebiten-asteroids/game"
+	"github.com/bobbyhiddn/ecs-asteroids/components"
+	"github.com/bobbyhiddn/ecs-asteroids/ecs"
+	"github.com/bobbyhiddn/ecs-asteroids/game"
 )
 
 const (

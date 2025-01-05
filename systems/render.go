@@ -2,14 +2,15 @@ package systems
 
 import (
 	"fmt"
-	"github.com/hajimehoshi/ebiten/v2"
-	"github.com/hajimehoshi/ebiten/v2/ebitenutil"
-	"github.com/samuel-pratt/ebiten-asteroids/components"
-	"github.com/samuel-pratt/ebiten-asteroids/ecs"
-	"github.com/samuel-pratt/ebiten-asteroids/game"
-	"github.com/samuel-pratt/ebiten-asteroids/render"
 	"image/color"
 	"math"
+
+	"github.com/bobbyhiddn/ecs-asteroids/components"
+	"github.com/bobbyhiddn/ecs-asteroids/ecs"
+	"github.com/bobbyhiddn/ecs-asteroids/game"
+	"github.com/bobbyhiddn/ecs-asteroids/render"
+	"github.com/hajimehoshi/ebiten/v2"
+	"github.com/hajimehoshi/ebiten/v2/ebitenutil"
 )
 
 type RenderSystem struct {
@@ -33,7 +34,7 @@ func drawDottedCircle(screen *ebiten.Image, x, y, radius float64, c color.Color)
 	for i := 0; i < numSegments; i++ {
 		angle := float64(i) * 2 * math.Pi / float64(numSegments)
 		nextAngle := float64(i+1) * 2 * math.Pi / float64(numSegments)
-		
+
 		// Only draw every other segment for dotted effect
 		if i%2 == 0 {
 			x1 := x + radius*math.Cos(angle)
@@ -92,17 +93,17 @@ func (s *RenderSystem) Draw(screen *ebiten.Image) {
 		if p, ok := player.(components.Player); ok {
 			// Draw score
 			ebitenutil.DebugPrintAt(screen, fmt.Sprintf("Score: %d", p.Score), 10, 10)
-			
+
 			// Draw lives
 			ebitenutil.DebugPrintAt(screen, fmt.Sprintf("Lives: %d", p.Lives), 10, 30)
-			
+
 			// Draw fire button (red dotted circle)
 			drawDottedCircle(screen, 60, float64(game.ScreenHeight-60), 40, color.RGBA{255, 0, 0, 255})
-			
+
 			// Draw game over
 			if p.IsGameOver {
 				gameOverText := "GAME OVER - Press Any Key to Restart"
-				textWidth := len(gameOverText) * 6 // Approximate width of text
+				textWidth := len(gameOverText) * 6      // Approximate width of text
 				x := (game.ScreenWidth - textWidth) / 2 // Center horizontally
 				ebitenutil.DebugPrintAt(screen, gameOverText, x, 300)
 			}

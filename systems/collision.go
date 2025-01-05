@@ -4,9 +4,10 @@ import (
 	"fmt"
 	"math"
 	"math/rand"
-	"github.com/samuel-pratt/ebiten-asteroids/components"
-	"github.com/samuel-pratt/ebiten-asteroids/ecs"
-	"github.com/samuel-pratt/ebiten-asteroids/game"
+
+	"github.com/bobbyhiddn/ecs-asteroids/components"
+	"github.com/bobbyhiddn/ecs-asteroids/ecs"
+	"github.com/bobbyhiddn/ecs-asteroids/game"
 )
 
 type CollisionSystem struct {
@@ -98,13 +99,13 @@ func (s *CollisionSystem) handleAsteroidCollision(id1, id2 ecs.EntityID, pos1, p
 	// Get velocities
 	vel1Interface := s.world.Components["components.Velocity"][id1]
 	vel2Interface := s.world.Components["components.Velocity"][id2]
-	
+
 	// Check if velocities exist
 	if vel1Interface == nil || vel2Interface == nil {
 		// One of the asteroids was probably already destroyed
 		return
 	}
-	
+
 	vel1 := vel1Interface.(components.Velocity)
 	vel2 := vel2Interface.(components.Velocity)
 
@@ -141,7 +142,7 @@ func (s *CollisionSystem) handleAsteroidCollision(id1, id2 ecs.EntityID, pos1, p
 		DY:       vel1.DY - j*ny,
 		MaxSpeed: vel1.MaxSpeed,
 	}
-	
+
 	vel2New := components.Velocity{
 		DX:       vel2.DX + j*nx,
 		DY:       vel2.DY + j*ny,
@@ -163,7 +164,7 @@ func (s *CollisionSystem) handleAsteroidCollision(id1, id2 ecs.EntityID, pos1, p
 	minSpeed := 100.0
 	for _, vel := range []*components.Velocity{&vel1New, &vel2New} {
 		speed := math.Sqrt(vel.DX*vel.DX + vel.DY*vel.DY)
-		
+
 		// Apply minimum speed
 		if speed < minSpeed {
 			scale := minSpeed / speed
@@ -171,7 +172,7 @@ func (s *CollisionSystem) handleAsteroidCollision(id1, id2 ecs.EntityID, pos1, p
 			vel.DY *= scale
 			continue // Skip max speed check if we just scaled up
 		}
-		
+
 		// Apply maximum speed
 		if speed > vel.MaxSpeed {
 			scale := vel.MaxSpeed / speed
@@ -258,7 +259,7 @@ func (s *CollisionSystem) handleShipHit(shipID ecs.EntityID) {
 	// Add invulnerability
 	s.world.AddComponent(shipID, components.Invulnerable{
 		Duration: 3.0, // 3 seconds of invulnerability
-		Timer: 3.0,
+		Timer:    3.0,
 	})
 }
 
@@ -284,7 +285,7 @@ func (s *CollisionSystem) handleAsteroidHit(asteroidID ecs.EntityID) {
 
 		for i := 0; i < 2; i++ {
 			newAsteroid := game.CreateAsteroid(s.world, asteroid.Size-1)
-			
+
 			// Position at split point
 			s.world.AddComponent(newAsteroid, components.Position{
 				X: pos.X,
@@ -299,10 +300,10 @@ func (s *CollisionSystem) handleAsteroidHit(asteroidID ecs.EntityID) {
 				splitAngle = angle + math.Pi/3
 			}
 
-			speed := math.Sqrt(vel.DX*vel.DX + vel.DY*vel.DY) * 1.5
+			speed := math.Sqrt(vel.DX*vel.DX+vel.DY*vel.DY) * 1.5
 			s.world.AddComponent(newAsteroid, components.Velocity{
-				DX: math.Cos(splitAngle) * speed,
-				DY: math.Sin(splitAngle) * speed,
+				DX:       math.Cos(splitAngle) * speed,
+				DY:       math.Sin(splitAngle) * speed,
 				MaxSpeed: speed * 1.2,
 			})
 		}

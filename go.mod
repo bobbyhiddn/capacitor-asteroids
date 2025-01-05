@@ -1,4 +1,4 @@
-module github.com/samuel-pratt/ebiten-asteroids
+module github.com/bobbyhiddn/ecs-asteroids
 
 go 1.22.0
 

@@ -4,17 +4,17 @@ import (
 	"math"
 	"math/rand"
 
-	"github.com/samuel-pratt/ebiten-asteroids/components"
-	"github.com/samuel-pratt/ebiten-asteroids/ecs"
-	"github.com/samuel-pratt/ebiten-asteroids/game"
+	"github.com/bobbyhiddn/ecs-asteroids/components"
+	"github.com/bobbyhiddn/ecs-asteroids/ecs"
+	"github.com/bobbyhiddn/ecs-asteroids/game"
 )
 
 const (
-	minSpawnInterval = 2.5  // Minimum time between spawns in seconds
-	maxAsteroids    = 8    // Maximum number of asteroids allowed at once
-	spawnPadding    = 50   // Distance beyond screen edges where asteroids spawn
-	minSpeed        = 50.0  // Minimum asteroid speed
-	maxSpeed        = 100.0 // Maximum asteroid speed
+	minSpawnInterval = 2.5   // Minimum time between spawns in seconds
+	maxAsteroids     = 8     // Maximum number of asteroids allowed at once
+	spawnPadding     = 50    // Distance beyond screen edges where asteroids spawn
+	minSpeed         = 50.0  // Minimum asteroid speed
+	maxSpeed         = 100.0 // Maximum asteroid speed
 )
 
 type AsteroidSpawnerSystem struct {
@@ -79,20 +79,20 @@ func (s *AsteroidSpawnerSystem) spawnAsteroid() {
 	// Calculate velocity towards screen center with some randomness
 	centerX := float64(game.ScreenWidth) / 2
 	centerY := float64(game.ScreenHeight) / 2
-	
+
 	// Base angle towards center
 	angle := math.Atan2(centerY-y, centerX-x)
-	
+
 	// Add randomness to angle (±45 degrees)
 	angle += (rand.Float64() - 0.5) * math.Pi / 2
-	
+
 	// Random speed between min and max
 	speed := minSpeed + rand.Float64()*(maxSpeed-minSpeed)
-	
+
 	// Set velocity components
 	s.world.AddComponent(asteroid, components.Velocity{
-		DX: math.Cos(angle) * speed,
-		DY: math.Sin(angle) * speed,
+		DX:       math.Cos(angle) * speed,
+		DY:       math.Sin(angle) * speed,
 		MaxSpeed: maxSpeed,
 	})
 }
