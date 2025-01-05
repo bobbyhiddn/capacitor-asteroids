@@ -106,7 +106,7 @@ func (s *RenderSystem) Draw(screen *ebiten.Image) {
 			}
 
 			// Draw fire button (red dotted circle)
-			drawDottedCircle(screen, 60, float64(s.gameScreen.Height()-60), 40, color.RGBA{255, 0, 0, 255})
+			drawDottedCircle(screen, 100, float64(s.gameScreen.Height()-100), 80, color.RGBA{255, 0, 0, 255})
 		}
 	}
 }

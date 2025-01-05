@@ -62,8 +62,8 @@ func (s *InputSystem) Update(dt float64) {
 			input.MousePressed = true
 
 			// Check if touch is within the fire button area
-			fireButtonY := s.screen.Height() - 60
-			if x >= 20 && x <= 100 && y >= fireButtonY-40 && y <= fireButtonY+40 {
+			fireButtonY := s.screen.Height() - 100
+			if x >= 20 && x <= 180 && y >= fireButtonY-80 && y <= fireButtonY+80 {
 				// Only shoot if this is a new touch
 				for _, justPressedID := range justPressedTouchIDs {
 					if touchID == justPressedID {
@@ -85,8 +85,8 @@ func (s *InputSystem) Update(dt float64) {
 				input.MouseY = y
 				input.MousePressed = true
 
-				fireButtonY := s.screen.Height() - 60
-				if x >= 20 && x <= 100 && y >= fireButtonY-40 && y <= fireButtonY+40 {
+				fireButtonY := s.screen.Height() - 100
+				if x >= 20 && x <= 180 && y >= fireButtonY-80 && y <= fireButtonY+80 {
 					// Only shoot if mouse button was just pressed
 					input.Shoot = inpututil.IsMouseButtonJustPressed(ebiten.MouseButtonLeft)
 				} else {

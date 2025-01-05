@@ -2,7 +2,7 @@ package game
 
 // Screen dimensions
 const (
-	DefaultWidth  = 800
+	DefaultWidth  = 1200
 	DefaultHeight = 600
 )
 
