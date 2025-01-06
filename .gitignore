@@ -18,3 +18,5 @@
 ebiten-asteroids
 
 **/__pycache__
+
+*.zip

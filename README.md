@@ -1,6 +1,8 @@
 # ECS Asteroids
 
-A recreation of the classic Atari game Asteroids using Go, Ebiten, and an Entity Component System (ECS) architecture. The game features both desktop and mobile support through WebAssembly.
+![ECS Asteroids](logo.png)
+
+A recreation of the classic Atari game Asteroids using Go, Ebiten, and an Entity Component System (ECS) architecture. The game features both desktop and mobile support through WebAssembly. Publishing to 
 
 To stay in line with the original Asteroids, all graphics are generated from lines drawn on the screen using built-in libraries instead of loading assets.
 
