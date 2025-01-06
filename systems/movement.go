@@ -6,10 +6,6 @@ import (
 	"github.com/bobbyhiddn/ecs-asteroids/game"
 )
 
-const (
-	padding = 50 // Distance beyond screen edges before destroying entities
-)
-
 type MovementSystem struct {
 	world  *ecs.World
 	screen *game.Screen
