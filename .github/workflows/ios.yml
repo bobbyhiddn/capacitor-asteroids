@@ -1,62 +1,72 @@
-name: iOS Build
+name: build-ios-app
 on:
   push:
-    branches: [ main ]
+    branches:
+      - 'main'
   pull_request:
-    branches: [ main ]
+    branches:
+      - 'main'
 
 jobs:
   build:
-    name: Build and Test
     runs-on: macos-latest
-
     steps:
-      - name: Checkout
-        uses: actions/checkout@v3
+      - uses: actions/checkout@v3
 
-      - name: Setup Node.js
-        uses: actions/setup-node@v3
-        with:
-          node-version: '18'
-          cache: 'npm'
-
-      - name: Install Dependencies
-        run: npm ci
-        working-directory: ./
-
-      - name: Setup Ruby
+      - name: Set up Ruby
         uses: ruby/setup-ruby@v1
         with:
           ruby-version: '3.0'
           bundler-cache: true
           working-directory: './capacitor/ios/App'
 
-      - name: Install Fastlane
-        run: bundle install
-        working-directory: ./capacitor/ios/App
+      - name: Install Node.js
+        uses: actions/setup-node@v3
+        with:
+          node-version: '18'
+          cache: 'npm'
 
-      - name: Setup Provisioning
-        env:
-          ASC_KEY_ID: ${{ secrets.APPLE_KEY_ID }}
-          ASC_ISSUER_ID: ${{ secrets.APPLE_ISSUER_ID }}
-          ASC_KEY_CONTENT: ${{ secrets.APPLE_KEY_CONTENT }}
-          MATCH_PASSWORD: ${{ secrets.MATCH_PASSWORD }}
-          APP_IDENTIFIER: ${{ secrets.DEVELOPER_APP_IDENTIFIER }}
-          TEAM_ID: ${{ secrets.DEVELOPER_PORTAL_TEAM_ID }}
-          APPLE_ID: ${{ secrets.FASTLANE_APPLE_ID }}
-          PROVISIONING_PROFILE_SPECIFIER: ${{ secrets.PROVISIONING_PROFILE_SPECIFIER }}
-        run: bundle exec fastlane sync_signing
-        working-directory: ./capacitor/ios/App
+      - name: Install dependencies
+        run: npm ci
 
-      - name: Build iOS App
+      - name: Install iOS dependencies
+        run: |
+          cd capacitor/ios/App
+          pod install
+
+      - name: Initialize Match
         env:
-          ASC_KEY_ID: ${{ secrets.APPLE_KEY_ID }}
-          ASC_ISSUER_ID: ${{ secrets.APPLE_ISSUER_ID }}
-          ASC_KEY_CONTENT: ${{ secrets.APPLE_KEY_CONTENT }}
           MATCH_PASSWORD: ${{ secrets.MATCH_PASSWORD }}
-          APP_IDENTIFIER: ${{ secrets.DEVELOPER_APP_IDENTIFIER }}
-          TEAM_ID: ${{ secrets.DEVELOPER_PORTAL_TEAM_ID }}
-          APPLE_ID: ${{ secrets.FASTLANE_APPLE_ID }}
+          MATCH_GIT_URL: ${{ secrets.MATCH_GIT_URL }}
+          FASTLANE_APPLE_ID: ${{ secrets.FASTLANE_APPLE_ID }}
+          APPLE_KEY_ID: ${{ secrets.APPLE_KEY_ID }}
+          APPLE_ISSUER_ID: ${{ secrets.APPLE_ISSUER_ID }}
+          APPLE_KEY_CONTENT: ${{ secrets.APPLE_KEY_CONTENT }}
+          DEVELOPER_APP_ID: ${{ secrets.DEVELOPER_APP_ID }}
+          DEVELOPER_APP_IDENTIFIER: ${{ secrets.DEVELOPER_APP_IDENTIFIER }}
+          DEVELOPER_PORTAL_TEAM_ID: ${{ secrets.DEVELOPER_PORTAL_TEAM_ID }}
           PROVISIONING_PROFILE_SPECIFIER: ${{ secrets.PROVISIONING_PROFILE_SPECIFIER }}
-        run: bundle exec fastlane beta
-        working-directory: ./capacitor/ios/App
+        run: |
+          cd capacitor/ios/App
+          # Check if certificates exist in match repo
+          if ! bundle exec fastlane match appstore --readonly true; then
+            echo "Initializing match repository with new certificates..."
+            bundle exec fastlane match appstore --force_for_new_devices true --generate_apple_certs true
+          fi
+
+      - name: Build and deploy
+        env:
+          MATCH_PASSWORD: ${{ secrets.MATCH_PASSWORD }}
+          MATCH_GIT_URL: ${{ secrets.MATCH_GIT_URL }}
+          FASTLANE_APPLE_ID: ${{ secrets.FASTLANE_APPLE_ID }}
+          APPLE_KEY_ID: ${{ secrets.APPLE_KEY_ID }}
+          APPLE_ISSUER_ID: ${{ secrets.APPLE_ISSUER_ID }}
+          APPLE_KEY_CONTENT: ${{ secrets.APPLE_KEY_CONTENT }}
+          DEVELOPER_APP_ID: ${{ secrets.DEVELOPER_APP_ID }}
+          DEVELOPER_APP_IDENTIFIER: ${{ secrets.DEVELOPER_APP_IDENTIFIER }}
+          DEVELOPER_PORTAL_TEAM_ID: ${{ secrets.DEVELOPER_PORTAL_TEAM_ID }}
+          PROVISIONING_PROFILE_SPECIFIER: ${{ secrets.PROVISIONING_PROFILE_SPECIFIER }}
+        run: |
+          cd capacitor/ios/App
+          bundle install
+          bundle exec fastlane beta
