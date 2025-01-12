@@ -45,7 +45,7 @@ jobs:
       - name: Initialize Match
         env:
           MATCH_PASSWORD: ${{ secrets.MATCH_PASSWORD }}
-          MATCH_GIT_URL: ${{ secrets.MATCH_GIT_URL }}
+          MATCH_GIT_URL: https://x-access-token:${{ github.token }}@github.com/bobbyhiddn/fastlane.git
           FASTLANE_APPLE_ID: ${{ secrets.FASTLANE_APPLE_ID }}
           APPLE_KEY_ID: ${{ secrets.APPLE_KEY_ID }}
           APPLE_ISSUER_ID: ${{ secrets.APPLE_ISSUER_ID }}
@@ -65,7 +65,7 @@ jobs:
       - name: Build and deploy
         env:
           MATCH_PASSWORD: ${{ secrets.MATCH_PASSWORD }}
-          MATCH_GIT_URL: ${{ secrets.MATCH_GIT_URL }}
+          MATCH_GIT_URL: https://x-access-token:${{ github.token }}@github.com/bobbyhiddn/fastlane.git
           FASTLANE_APPLE_ID: ${{ secrets.FASTLANE_APPLE_ID }}
           APPLE_KEY_ID: ${{ secrets.APPLE_KEY_ID }}
           APPLE_ISSUER_ID: ${{ secrets.APPLE_ISSUER_ID }}
