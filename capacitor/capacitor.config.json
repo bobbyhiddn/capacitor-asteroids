@@ -1,0 +1,10 @@
+{
+  "appId": "com.bobbyhiddn.asteroids",
+  "appName": "ecs-asteroids",
+  "webDir": "dist",
+  "plugins": {
+    "SplashScreen": {
+      "launchAutoHide": false
+    }
+  }
+}

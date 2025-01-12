@@ -1,0 +1,62 @@
+name: iOS Build
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+
+jobs:
+  build:
+    name: Build and Test
+    runs-on: macos-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v3
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v3
+        with:
+          node-version: '18'
+          cache: 'npm'
+
+      - name: Install Dependencies
+        run: npm ci
+        working-directory: ./
+
+      - name: Setup Ruby
+        uses: ruby/setup-ruby@v1
+        with:
+          ruby-version: '3.0'
+          bundler-cache: true
+          working-directory: './capacitor/ios/App'
+
+      - name: Install Fastlane
+        run: bundle install
+        working-directory: ./capacitor/ios/App
+
+      - name: Setup Provisioning
+        env:
+          ASC_KEY_ID: ${{ secrets.APPLE_KEY_ID }}
+          ASC_ISSUER_ID: ${{ secrets.APPLE_ISSUER_ID }}
+          ASC_KEY_CONTENT: ${{ secrets.APPLE_KEY_CONTENT }}
+          MATCH_PASSWORD: ${{ secrets.MATCH_PASSWORD }}
+          APP_IDENTIFIER: ${{ secrets.DEVELOPER_APP_IDENTIFIER }}
+          TEAM_ID: ${{ secrets.DEVELOPER_PORTAL_TEAM_ID }}
+          APPLE_ID: ${{ secrets.FASTLANE_APPLE_ID }}
+          PROVISIONING_PROFILE_SPECIFIER: ${{ secrets.PROVISIONING_PROFILE_SPECIFIER }}
+        run: bundle exec fastlane sync_signing
+        working-directory: ./capacitor/ios/App
+
+      - name: Build iOS App
+        env:
+          ASC_KEY_ID: ${{ secrets.APPLE_KEY_ID }}
+          ASC_ISSUER_ID: ${{ secrets.APPLE_ISSUER_ID }}
+          ASC_KEY_CONTENT: ${{ secrets.APPLE_KEY_CONTENT }}
+          MATCH_PASSWORD: ${{ secrets.MATCH_PASSWORD }}
+          APP_IDENTIFIER: ${{ secrets.DEVELOPER_APP_IDENTIFIER }}
+          TEAM_ID: ${{ secrets.DEVELOPER_PORTAL_TEAM_ID }}
+          APPLE_ID: ${{ secrets.FASTLANE_APPLE_ID }}
+          PROVISIONING_PROFILE_SPECIFIER: ${{ secrets.PROVISIONING_PROFILE_SPECIFIER }}
+        run: bundle exec fastlane beta
+        working-directory: ./capacitor/ios/App

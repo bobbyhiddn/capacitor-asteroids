@@ -1,0 +1,79 @@
+# This file contains the fastlane.tools configuration
+# You can find the documentation at https://docs.fastlane.tools
+
+# Uncomment the line if you want fastlane to automatically update itself
+# update_fastlane
+
+default_platform(:ios)
+
+platform :ios do
+  before_all do
+    setup_ci if ENV['CI']
+  end
+
+  desc "Sync certificates and profiles"
+  lane :sync_signing do
+    app_store_connect_api_key(
+      key_id: ENV["ASC_KEY_ID"],
+      issuer_id: ENV["ASC_ISSUER_ID"],
+      key_content: ENV["ASC_KEY_CONTENT"]
+    ) if ENV["ASC_KEY_CONTENT"]
+
+    match(
+      type: "appstore",
+      readonly: true,
+      app_identifier: [CredentialsManager::AppfileConfig.try_fetch_value(:app_identifier)]
+    )
+  end
+
+  desc "Increment build number"
+  lane :increment_build do
+    increment_build_number(
+      build_number: Time.now.strftime("%Y%m%d%H%M")
+    )
+  end
+
+  desc "Build the iOS app"
+  lane :build do
+    sync_signing
+    increment_build
+    
+    build_app(
+      scheme: "App",
+      export_method: "app-store",
+      clean: true,
+      output_directory: "build",
+      export_options: {
+        provisioningProfiles: {
+          CredentialsManager::AppfileConfig.try_fetch_value(:app_identifier) => "match AppStore #{CredentialsManager::AppfileConfig.try_fetch_value(:app_identifier)}"
+        }
+      }
+    )
+  end
+
+  desc "Push a new beta build to TestFlight"
+  lane :beta do
+    build
+    upload_to_testflight(
+      skip_waiting_for_build_processing: true,
+      apple_id: CredentialsManager::AppfileConfig.try_fetch_value(:app_identifier)
+    )
+  end
+
+  desc "Push a new release build to App Store"
+  lane :release do
+    build
+    upload_to_app_store(
+      force: true,
+      skip_metadata: true,
+      skip_screenshots: true,
+      skip_binary_upload: false
+    )
+  end
+
+  error do |lane, exception, options|
+    if ENV['CI']
+      UI.error "Fastlane failed on lane #{lane}: #{exception.message}"
+    end
+  end
+end
