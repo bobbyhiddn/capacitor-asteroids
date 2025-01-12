@@ -221,6 +221,7 @@ GEM
       xcpretty (~> 0.2, >= 0.0.7)
 
 PLATFORMS
+  arm64-darwin-23
   x64-mingw-ucrt
 
 DEPENDENCIES
@@ -231,6 +232,9 @@ DEPENDENCIES
   logger
   mutex_m
   pry
+
+RUBY VERSION
+   ruby 3.4.1p0
 
 BUNDLED WITH
    2.6.2
