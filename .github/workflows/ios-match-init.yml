@@ -1,0 +1,88 @@
+name: Initialize iOS Match Certificates
+on:
+  workflow_dispatch:  # Manual trigger only
+
+jobs:
+  check_existing:
+    runs-on: ubuntu-latest
+    outputs:
+      should_continue: ${{ steps.check.outputs.should_continue }}
+    steps:
+      - name: Check if match repository exists and has content
+        id: check
+        env:
+          GIT_URL: ${{ secrets.GIT_URL }}
+          GIT_AUTHORIZATION: ${{ secrets.GIT_AUTHORIZATION }}
+        run: |
+          # Extract repo details from GIT_URL
+          REPO_URL=$(echo $GIT_URL | sed 's/https:\/\///')
+          
+          # Try to fetch repository contents
+          HTTP_STATUS=$(curl -s -o /dev/null -w "%{http_code}" \
+            -H "Authorization: Bearer $GIT_AUTHORIZATION" \
+            "https://api.github.com/repos/${REPO_URL#github.com/}/contents")
+          
+          if [ "$HTTP_STATUS" = "200" ]; then
+            echo "Match repository already exists and contains files. Initialization has already been performed."
+            echo "should_continue=false" >> $GITHUB_OUTPUT
+            exit 1
+          else
+            echo "Match repository is empty or doesn't exist. Proceeding with initialization."
+            echo "should_continue=true" >> $GITHUB_OUTPUT
+          fi
+
+  setup_certificates:
+    needs: check_existing
+    if: needs.check_existing.outputs.should_continue == 'true'
+    runs-on: macos-latest
+    steps:
+      - uses: actions/checkout@v3
+
+      - name: Set up Ruby
+        uses: ruby/setup-ruby@v1
+        with:
+          ruby-version: '3.2.6'
+          bundler-cache: true
+          working-directory: './capacitor/ios/App'
+
+      - name: Setup temporary keychain
+        run: |
+          security create-keychain -p "${{ secrets.TEMP_KEYCHAIN_PASSWORD }}" build.keychain
+          security list-keychains -s build.keychain
+          security default-keychain -s build.keychain
+          security unlock-keychain -p "${{ secrets.TEMP_KEYCHAIN_PASSWORD }}" build.keychain
+          security set-keychain-settings
+
+      - name: Initialize Match and Generate Certificates
+        env:
+          MATCH_PASSWORD: "${{ secrets.MATCH_PASSWORD }}"
+          MATCH_GIT_URL: "${{ secrets.GIT_URL }}"
+          MATCH_GIT_BASIC_AUTHORIZATION: "${{ secrets.GIT_AUTHORIZATION }}"
+          FASTLANE_APPLE_ID: "${{ secrets.FASTLANE_APPLE_ID }}"
+          FASTLANE_APPLE_TEAM_ID: "${{ secrets.DEVELOPER_PORTAL_TEAM_ID }}"
+          DEVELOPER_APP_IDENTIFIER: "${{ secrets.DEVELOPER_APP_IDENTIFIER }}"
+          APPLE_KEY_ID: "${{ secrets.APPLE_KEY_ID }}"
+          APPLE_ISSUER_ID: "${{ secrets.APPLE_ISSUER_ID }}"
+          APPLE_KEY_CONTENT: "${{ secrets.APPLE_KEY_CONTENT }}"
+        run: |
+          cd capacitor/ios/App
+          bundle install
+          
+          # Configure App Store Connect API
+          echo "Configuring App Store Connect API..."
+          bundle exec fastlane run app_store_connect_api_key \
+            key_id:"$APPLE_KEY_ID" \
+            issuer_id:"$APPLE_ISSUER_ID" \
+            key_content:"$APPLE_KEY_CONTENT" \
+            is_key_content_base64:true \
+            in_house:false
+
+          echo "Initializing match..."
+          bundle exec fastlane match appstore \
+            --force_for_new_devices true \
+            --generate_apple_certs true \
+            --app_identifier "$DEVELOPER_APP_IDENTIFIER"
+
+      - name: Clean up keychain
+        if: always()
+        run: security delete-keychain build.keychain

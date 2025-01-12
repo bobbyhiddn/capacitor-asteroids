@@ -1,38 +1,44 @@
-# This file contains the fastlane.tools configuration
-# You can find the documentation at https://docs.fastlane.tools
-#
-# For a list of all available actions, check out
-#
-#     https://docs.fastlane.tools/actions
-#
-# For a list of all available plugins, check out
-#
-#     https://docs.fastlane.tools/plugins/available-plugins
-#
-
 default_platform(:ios)
 
 platform :ios do
-  before_all do
+  desc "Push a new beta build to TestFlight"
+  lane :closed_beta do
+    setup_ci if ENV['CI']
+    
+    # Configure App Store Connect API
     app_store_connect_api_key(
       key_id: ENV["APPLE_KEY_ID"],
       issuer_id: ENV["APPLE_ISSUER_ID"],
       key_content: ENV["APPLE_KEY_CONTENT"],
-      is_key_content_base64: true
+      is_key_content_base64: true,
+      in_house: false
     )
-  end
 
-  desc "Push a new beta build to TestFlight"
-  lane :beta do
-    setup_ci if ENV['CI']
-    match(
-      type: 'appstore',
+    # Sync certificates and profiles
+    sync_code_signing(
+      type: "appstore",
       app_identifier: ENV["DEVELOPER_APP_IDENTIFIER"],
       git_url: ENV["MATCH_GIT_URL"],
-      readonly: true
+      git_basic_authorization: ENV["MATCH_GIT_BASIC_AUTHORIZATION"],
+      readonly: true,
+      keychain_name: "build.keychain",
+      keychain_password: ENV["TEMP_KEYCHAIN_PASSWORD"]
     )
-    build_app(
+
+    # Update code signing in project
+    update_code_signing_settings(
+      use_automatic_signing: false,
+      path: "App.xcodeproj",
+      team_id: ENV["DEVELOPER_PORTAL_TEAM_ID"],
+      profile_name: ENV["PROVISIONING_PROFILE_SPECIFIER"],
+      code_sign_identity: "iPhone Distribution",
+      bundle_identifier: ENV["DEVELOPER_APP_IDENTIFIER"]
+    )
+
+    # Build the app
+    build_ios_app(
       scheme: "App",
+      workspace: "App.xcworkspace",
       export_method: "app-store",
       export_options: {
         provisioningProfiles: { 
@@ -40,10 +46,12 @@ platform :ios do
         }
       }
     )
+
+    # Upload to TestFlight
     upload_to_testflight(
+      app_identifier: ENV["DEVELOPER_APP_IDENTIFIER"],
       skip_waiting_for_build_processing: true,
       apple_id: ENV["DEVELOPER_APP_ID"],
-      app_identifier: ENV["DEVELOPER_APP_IDENTIFIER"],
       skip_submission: true,
       distribute_external: false,
       notify_external_testers: false

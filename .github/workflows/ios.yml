@@ -1,36 +1,71 @@
-name: build-ios-app
+name: Deploy iOS app to TestFlight on merge
 on:
   push:
     branches:
-      - 'main'
-  pull_request:
-    branches:
-      - 'main'
+      - main
+  workflow_dispatch:
 
 jobs:
-  build:
+  check_match_setup:
+    runs-on: ubuntu-latest
+    outputs:
+      is_initialized: ${{ steps.check.outputs.is_initialized }}
+    steps:
+      - name: Check if match repository is initialized
+        id: check
+        env:
+          GIT_URL: ${{ secrets.GIT_URL }}
+          GIT_AUTHORIZATION: ${{ secrets.GIT_AUTHORIZATION }}
+        run: |
+          # Extract repo details from GIT_URL
+          REPO_URL=$(echo $GIT_URL | sed 's/https:\/\///')
+          
+          # Try to fetch repository contents
+          HTTP_STATUS=$(curl -s -o /dev/null -w "%{http_code}" \
+            -H "Authorization: Bearer $GIT_AUTHORIZATION" \
+            "https://api.github.com/repos/${REPO_URL#github.com/}/contents")
+          
+          if [ "$HTTP_STATUS" = "200" ]; then
+            echo "Match repository exists and contains certificates."
+            echo "is_initialized=true" >> $GITHUB_OUTPUT
+          else
+            echo "Error: Match repository is empty or not initialized."
+            echo "Please run the iOS Match Init workflow first to set up certificates."
+            echo "is_initialized=false" >> $GITHUB_OUTPUT
+            exit 1
+          fi
+
+  deploy_ios:
+    needs: check_match_setup
+    if: needs.check_match_setup.outputs.is_initialized == 'true'
+    name: Deploy beta build to TestFlight
     runs-on: macos-latest
     steps:
-      - uses: actions/checkout@v3
+      - name: Checkout code
+        uses: actions/checkout@v3
 
-      - name: Set up Ruby
+      - name: Setup Ruby
         uses: ruby/setup-ruby@v1
         with:
           ruby-version: '3.2.6'
           bundler-cache: true
-          working-directory: './capacitor/ios/App'
+          working-directory: 'capacitor/ios/App'
 
-      - name: Add macOS platform to bundle
-        run: |
-          cd capacitor/ios/App
-          bundle lock --add-platform arm64-darwin-23 x86_64-darwin-23
-
-      - name: Install Node.js
+      - name: Setup Node.js
         uses: actions/setup-node@v3
         with:
           node-version: '18'
           cache: 'npm'
           cache-dependency-path: './capacitor/package-lock.json'
+
+      # Setup keychain for certificates
+      - name: Setup Keychain
+        run: |
+          security create-keychain -p "${{ secrets.TEMP_KEYCHAIN_PASSWORD }}" build.keychain
+          security list-keychains -s build.keychain
+          security default-keychain -s build.keychain
+          security unlock-keychain -p "${{ secrets.TEMP_KEYCHAIN_PASSWORD }}" build.keychain
+          security set-keychain-settings
 
       - name: Install dependencies
         run: |
@@ -40,41 +75,29 @@ jobs:
       - name: Install iOS dependencies
         run: |
           cd capacitor/ios/App
+          bundle install
           pod install
 
-      - name: Initialize Match
+      - name: Deploy iOS Beta to TestFlight via Fastlane
         env:
-          MATCH_PASSWORD: ${{ secrets.MATCH_PASSWORD }}
-          MATCH_GIT_URL: https://x-access-token:${{ github.token }}@github.com/bobbyhiddn/fastlane
-          FASTLANE_APPLE_ID: ${{ secrets.FASTLANE_APPLE_ID }}
-          APPLE_KEY_ID: ${{ secrets.APPLE_KEY_ID }}
-          APPLE_ISSUER_ID: ${{ secrets.APPLE_ISSUER_ID }}
-          APPLE_KEY_CONTENT: ${{ secrets.APPLE_KEY_CONTENT }}
-          DEVELOPER_APP_ID: ${{ secrets.DEVELOPER_APP_ID }}
-          DEVELOPER_APP_IDENTIFIER: ${{ secrets.DEVELOPER_APP_IDENTIFIER }}
-          DEVELOPER_PORTAL_TEAM_ID: ${{ secrets.DEVELOPER_PORTAL_TEAM_ID }}
-          PROVISIONING_PROFILE_SPECIFIER: ${{ secrets.PROVISIONING_PROFILE_SPECIFIER }}
+          APP_STORE_CONNECT_TEAM_ID: "${{ secrets.APP_STORE_CONNECT_TEAM_ID }}"
+          DEVELOPER_APP_ID: "${{ secrets.DEVELOPER_APP_ID }}"
+          DEVELOPER_APP_IDENTIFIER: "${{ secrets.DEVELOPER_APP_IDENTIFIER }}"
+          DEVELOPER_PORTAL_TEAM_ID: "${{ secrets.DEVELOPER_PORTAL_TEAM_ID }}"
+          FASTLANE_APPLE_ID: "${{ secrets.FASTLANE_APPLE_ID }}"
+          MATCH_PASSWORD: "${{ secrets.MATCH_PASSWORD }}"
+          MATCH_GIT_URL: "${{ secrets.GIT_URL }}"
+          MATCH_GIT_BASIC_AUTHORIZATION: "${{ secrets.GIT_AUTHORIZATION }}"
+          PROVISIONING_PROFILE_SPECIFIER: "${{ secrets.PROVISIONING_PROFILE_SPECIFIER }}"
+          TEMP_KEYCHAIN_PASSWORD: "${{ secrets.TEMP_KEYCHAIN_PASSWORD }}"
+          APPLE_KEY_ID: "${{ secrets.APPLE_KEY_ID }}"
+          APPLE_ISSUER_ID: "${{ secrets.APPLE_ISSUER_ID }}"
+          APPLE_KEY_CONTENT: "${{ secrets.APPLE_KEY_CONTENT }}"
         run: |
           cd capacitor/ios/App
-          # Check if certificates exist in match repo
-          if ! bundle exec fastlane match appstore --readonly true; then
-            echo "Initializing match repository with new certificates..."
-            bundle exec fastlane match appstore --force_for_new_devices true --generate_apple_certs true
-          fi
+          bundle exec fastlane closed_beta
 
-      - name: Build and deploy
-        env:
-          MATCH_PASSWORD: ${{ secrets.MATCH_PASSWORD }}
-          MATCH_GIT_URL: https://x-access-token:${{ github.token }}@github.com/bobbyhiddn/fastlane.git
-          FASTLANE_APPLE_ID: ${{ secrets.FASTLANE_APPLE_ID }}
-          APPLE_KEY_ID: ${{ secrets.APPLE_KEY_ID }}
-          APPLE_ISSUER_ID: ${{ secrets.APPLE_ISSUER_ID }}
-          APPLE_KEY_CONTENT: ${{ secrets.APPLE_KEY_CONTENT }}
-          DEVELOPER_APP_ID: ${{ secrets.DEVELOPER_APP_ID }}
-          DEVELOPER_APP_IDENTIFIER: ${{ secrets.DEVELOPER_APP_IDENTIFIER }}
-          DEVELOPER_PORTAL_TEAM_ID: ${{ secrets.DEVELOPER_PORTAL_TEAM_ID }}
-          PROVISIONING_PROFILE_SPECIFIER: ${{ secrets.PROVISIONING_PROFILE_SPECIFIER }}
+      - name: Clean up keychain
+        if: always()
         run: |
-          cd capacitor/ios/App
-          bundle install
-          bundle exec fastlane beta
+          security delete-keychain build.keychain
