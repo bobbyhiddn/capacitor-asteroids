@@ -30,9 +30,12 @@ jobs:
         with:
           node-version: '18'
           cache: 'npm'
+          cache-dependency-path: './capacitor/package-lock.json'
 
       - name: Install dependencies
-        run: npm ci
+        run: |
+          cd capacitor
+          npm ci
 
       - name: Install iOS dependencies
         run: |
