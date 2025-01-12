@@ -20,6 +20,11 @@ jobs:
           bundler-cache: true
           working-directory: './capacitor/ios/App'
 
+      - name: Add macOS platform to bundle
+        run: |
+          cd capacitor/ios/App
+          bundle lock --add-platform arm64-darwin-23 x86_64-darwin-23
+
       - name: Install Node.js
         uses: actions/setup-node@v3
         with:
