@@ -13,7 +13,6 @@
     "preview": "vite preview"
   },
   "dependencies": {
-    "@capacitor/camera": "latest",
     "@capacitor/core": "latest",
     "@capacitor/ios": "^6.2.0",
     "@capacitor/splash-screen": "latest"
