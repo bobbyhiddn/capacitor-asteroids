@@ -82,39 +82,93 @@
     <div id="canvas-container">
         <canvas id="canvas"></canvas>
     </div>
+
     <script>
-        if (!WebAssembly.instantiateStreaming) {
-            WebAssembly.instantiateStreaming = async (resp, importObject) => {
-                const source = await (await resp).arrayBuffer();
-                return await WebAssembly.instantiate(source, importObject);
-            };
+        // Global error handler
+        window.onerror = function(msg, url, lineNo, columnNo, error) {
+            console.error('Window Error:', {msg, url, lineNo, columnNo, error});
+            alert(`Error: ${msg}\nLine: ${lineNo}\nDetails: ${error}`);
+            return false;
+        };
+
+        // Asset path helper
+        function getAssetPath(filename) {
+            return `assets/${filename}`;
         }
 
-        // Lock screen orientation if possible
-        async function lockOrientation() {
-            try {
-                if (screen.orientation && screen.orientation.lock) {
-                    await screen.orientation.lock('landscape');
-                }
-            } catch (e) {
-                console.log('Orientation lock not supported');
+        let initializationAttempts = 0;
+        const MAX_ATTEMPTS = 3;
+
+        async function initializeWebAssembly() {
+            console.log('Starting WebAssembly initialization...');
+            
+            if (!WebAssembly.instantiateStreaming) {
+                console.log('WebAssembly.instantiateStreaming not available, using polyfill');
+                WebAssembly.instantiateStreaming = async (resp, importObject) => {
+                    const source = await (await resp).arrayBuffer();
+                    return await WebAssembly.instantiate(source, importObject);
+                };
             }
-        }
 
-        function getViewportSize() {
-            const vh = window.innerHeight;
-            const vw = window.innerWidth;
-            // Some browsers include UI elements in innerHeight, use documentElement if available
-            const docHeight = document.documentElement.clientHeight;
-            return {
-                width: vw,
-                height: Math.min(vh, docHeight)
-            };
+            try {
+                const go = new Go();
+                const wasmPath = getAssetPath('game.wasm');
+                console.log('Environment:', {
+                    isCapacitor: !!window.Capacitor,
+                    wasmPath,
+                    documentPath: document.location.href
+                });
+                
+                const response = await fetch(wasmPath);
+                if (!response.ok) {
+                    throw new Error(`Failed to fetch WASM file: ${response.status} ${response.statusText}`);
+                }
+                
+                console.log('WASM file fetched successfully, instantiating...');
+                const result = await WebAssembly.instantiateStreaming(response, go.importObject);
+                console.log('WebAssembly instantiated successfully, starting game...');
+                
+                // Update canvas size before starting the game
+                updateCanvasSize();
+                
+                try {
+                    await go.run(result.instance);
+                } catch (runError) {
+                    console.error('Error running WebAssembly:', runError);
+                    throw runError;
+                }
+            } catch (err) {
+                console.error('Detailed error:', {
+                    message: err.message,
+                    stack: err.stack,
+                    name: err.name,
+                    cause: err.cause
+                });
+                
+                if (initializationAttempts < MAX_ATTEMPTS) {
+                    initializationAttempts++;
+                    console.log(`Retrying initialization (attempt ${initializationAttempts}/${MAX_ATTEMPTS})...`);
+                    setTimeout(initializeWebAssembly, 1000);
+                } else {
+                    console.error('Failed to initialize after maximum attempts');
+                    alert('Failed to load game. Please check the console for details.');
+                }
+            }
         }
 
         function updateCanvasSize() {
             const canvas = document.getElementById('canvas');
+            if (!canvas) {
+                console.error('Canvas element not found');
+                return;
+            }
             const container = document.getElementById('canvas-container');
+            if (!container) {
+                console.error('Canvas container not found');
+                return;
+            }
+            
+            console.log('Updating canvas size...');
             
             // Reset canvas style
             canvas.style.cssText = '';
@@ -161,105 +215,55 @@
             const translateX = (containerWidth - targetWidth) / 2;
             const translateY = (containerHeight - targetHeight) / 2;
             canvas.style.transform = `translate(${translateX}px, ${translateY}px)`;
-        }
-
-        // Debounced resize handler
-        let resizeTimeout;
-        function handleResize() {
-            clearTimeout(resizeTimeout);
-            resizeTimeout = setTimeout(updateCanvasSize, 100);
-        }
-
-        // Handle orientation change
-        function handleOrientationChange() {
-            // Update immediately and after a delay
-            updateCanvasSize();
-            // Multiple updates to handle different browser behaviors
-            setTimeout(updateCanvasSize, 100);
-            setTimeout(updateCanvasSize, 300);
-        }
-
-        // iOS-specific fixes
-        function fixIOSHeightBug() {
-            document.body.style.height = window.innerHeight + 'px';
-            document.documentElement.style.height = window.innerHeight + 'px';
-        }
-
-        // Add event listeners
-        window.addEventListener('resize', handleResize, false);
-        window.addEventListener('orientationchange', handleOrientationChange, false);
-        
-        // iOS height fixes
-        if (/iPhone|iPad|iPod/.test(navigator.platform)) {
-            window.addEventListener('resize', fixIOSHeightBug);
-            fixIOSHeightBug();
-        }
-
-        // Initialize
-        document.addEventListener('DOMContentLoaded', async () => {
-            await lockOrientation();
-            updateCanvasSize();
-            setTimeout(updateCanvasSize, 100);
-        });
-    </script>
-    <script>
-        // Helper function to get the correct asset path based on platform
-        function getAssetPath(filename) {
-            // Check if we're running in Capacitor
-            if (window.Capacitor) {
-                // Use public URL for Capacitor
-                return filename;
-            }
-            // Use relative path for web
-            return `./assets/${filename}`;
-        }
-
-        // Load wasm_exec.js dynamically
-        const script = document.createElement('script');
-        script.src = getAssetPath('wasm_exec.js');
-        script.onload = function() {
-            // Once wasm_exec.js is loaded, initialize WebAssembly
-            document.addEventListener('DOMContentLoaded', async function() {
-                console.log('DOM loaded, initializing WebAssembly...');
-                
-                if (!WebAssembly.instantiateStreaming) {
-                    console.log('WebAssembly.instantiateStreaming not available, using polyfill');
-                    WebAssembly.instantiateStreaming = async (resp, importObject) => {
-                        const source = await (await resp).arrayBuffer();
-                        return await WebAssembly.instantiate(source, importObject);
-                    };
-                }
-
-                try {
-                    const go = new Go();
-                    const wasmPath = getAssetPath('game.wasm');
-                    console.log('Platform:', window.Capacitor ? 'Capacitor' : 'Web');
-                    console.log('Attempting to fetch WASM from:', wasmPath);
-                    
-                    const response = await fetch(wasmPath);
-                    if (!response.ok) {
-                        throw new Error(`Failed to fetch WASM file: ${response.status} ${response.statusText}`);
-                    }
-                    
-                    console.log('WASM file fetched successfully, instantiating...');
-                    const result = await WebAssembly.instantiateStreaming(response, go.importObject);
-                    console.log('WebAssembly instantiated successfully, starting game...');
-                    go.run(result.instance);
-                } catch (err) {
-                    console.error('Failed to load WebAssembly:', err);
-                    console.error('Error details:', {
-                        message: err.message,
-                        stack: err.stack,
-                        name: err.name
-                    });
-                    alert('Failed to load game. Please check the console for details.');
-                }
+            
+            // Log the final dimensions
+            console.log('Canvas dimensions set to:', {
+                width: canvas.width,
+                height: canvas.height,
+                styleWidth: canvas.style.width,
+                styleHeight: canvas.style.height
             });
-        };
-        script.onerror = function(e) {
-            console.error('Failed to load wasm_exec.js:', e);
-        };
-        document.head.appendChild(script);
+        }
+
+        function getViewportSize() {
+            const vh = window.innerHeight;
+            const vw = window.innerWidth;
+            // Some browsers include UI elements in innerHeight, use documentElement if available
+            const docHeight = document.documentElement.clientHeight;
+            return {
+                width: vw,
+                height: Math.min(vh, docHeight)
+            };
+        }
+
+        // Wait for both DOM and wasm_exec.js to be loaded before initializing
+        const domLoaded = new Promise(resolve => {
+            if (document.readyState === 'loading') {
+                document.addEventListener('DOMContentLoaded', resolve);
+            } else {
+                resolve();
+            }
+        });
+
+        const wasmExecLoaded = new Promise(resolve => {
+            if (window.Go) {
+                resolve();
+            } else {
+                const script = document.createElement('script');
+                script.src = getAssetPath('wasm_exec.js');
+                script.onload = resolve;
+                script.onerror = (e) => console.error('Failed to load wasm_exec.js:', e);
+                document.head.appendChild(script);
+            }
+        });
+
+        // Only initialize when everything is ready
+        Promise.all([domLoaded, wasmExecLoaded])
+            .then(() => {
+                console.log('DOM and wasm_exec.js loaded, proceeding with initialization');
+                setTimeout(initializeWebAssembly, 100);
+            })
+            .catch(error => console.error('Error during initialization:', error));
     </script>
 </body>
 </html>

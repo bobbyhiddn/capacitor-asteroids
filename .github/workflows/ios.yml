@@ -66,15 +66,15 @@ jobs:
       # Copy game assets to capacitor dist
       - name: Copy game assets to capacitor
         run: |
-          mkdir -p capacitor/dist
-          cp capacitor/src/assets/game.wasm capacitor/dist/
-          cp capacitor/src/assets/wasm_exec.js capacitor/dist/
+          mkdir -p capacitor/dist/assets
+          cp capacitor/src/assets/game.wasm capacitor/dist/assets/
+          cp capacitor/src/assets/wasm_exec.js capacitor/dist/assets/
           cp capacitor/src/index.html capacitor/dist/
           
-          # Also copy to iOS public directory to ensure assets are bundled
-          mkdir -p capacitor/ios/App/App/public
-          cp capacitor/src/assets/game.wasm capacitor/ios/App/App/public/
-          cp capacitor/src/assets/wasm_exec.js capacitor/ios/App/App/public/
+          # Also copy to iOS public directory
+          mkdir -p capacitor/ios/App/App/public/assets
+          cp capacitor/src/assets/game.wasm capacitor/ios/App/App/public/assets/
+          cp capacitor/src/assets/wasm_exec.js capacitor/ios/App/App/public/assets/
 
       # Setup keychain for certificates
       - name: Setup Keychain
