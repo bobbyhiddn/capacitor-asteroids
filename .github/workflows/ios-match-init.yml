@@ -31,6 +31,22 @@ jobs:
     needs: check_existing
     if: needs.check_existing.outputs.should_continue == 'true'
     runs-on: macos-latest
+    env:
+      MATCH_PASSWORD: ${{ secrets.MATCH_PASSWORD }}
+      GIT_AUTHORIZATION: ${{ secrets.GIT_AUTHORIZATION }}
+      FASTLANE_APPLE_ID: ${{ secrets.FASTLANE_APPLE_ID }}
+      FASTLANE_USER: ${{ secrets.FASTLANE_USER }}
+      FASTLANE_PASSWORD: ${{ secrets.FASTLANE_PASSWORD }}
+      FASTLANE_APPLE_TEAM_ID: ${{ secrets.DEVELOPER_PORTAL_TEAM_ID }}
+      DEVELOPER_APP_IDENTIFIER: ${{ secrets.DEVELOPER_APP_IDENTIFIER }}
+      DEVELOPER_PORTAL_TEAM_ID: ${{ secrets.DEVELOPER_PORTAL_TEAM_ID }}
+      APPLE_KEY_ID: ${{ secrets.APPLE_KEY_ID }}
+      APPLE_ISSUER_ID: ${{ secrets.APPLE_ISSUER_ID }}
+      APPLE_KEY_CONTENT: ${{ secrets.APPLE_KEY_CONTENT }}
+      SPACESHIP_CONNECT_API_KEY_ID: ${{ secrets.APPLE_KEY_ID }}
+      SPACESHIP_CONNECT_API_ISSUER_ID: ${{ secrets.APPLE_ISSUER_ID }}
+      SPACESHIP_CONNECT_API_KEY: ${{ secrets.APPLE_KEY_CONTENT }}
+      KEYCHAIN_PASSWORD: ${{ secrets.TEMP_KEYCHAIN_PASSWORD }}
     steps:
       - uses: actions/checkout@v3
 
@@ -43,28 +59,13 @@ jobs:
 
       - name: Setup temporary keychain
         run: |
-          security create-keychain -p "${{ secrets.TEMP_KEYCHAIN_PASSWORD }}" build.keychain
+          security create-keychain -p "$KEYCHAIN_PASSWORD" build.keychain
           security list-keychains -s build.keychain
           security default-keychain -s build.keychain
-          security unlock-keychain -p "${{ secrets.TEMP_KEYCHAIN_PASSWORD }}" build.keychain
+          security unlock-keychain -p "$KEYCHAIN_PASSWORD" build.keychain
           security set-keychain-settings
 
       - name: Initialize Match and Generate Certificates
-        env:
-          MATCH_PASSWORD: "${{ secrets.MATCH_PASSWORD }}"
-          GIT_AUTHORIZATION: "${{ secrets.GIT_AUTHORIZATION }}"
-          FASTLANE_APPLE_ID: "${{ secrets.FASTLANE_APPLE_ID }}"
-          FASTLANE_USER: "${{ secrets.FASTLANE_USER }}"
-          FASTLANE_PASSWORD: "${{ secrets.FASTLANE_PASSWORD }}"
-          FASTLANE_APPLE_TEAM_ID: "${{ secrets.DEVELOPER_PORTAL_TEAM_ID }}"
-          DEVELOPER_APP_IDENTIFIER: "${{ secrets.DEVELOPER_APP_IDENTIFIER }}"
-          APPLE_KEY_ID: "${{ secrets.APPLE_KEY_ID }}"
-          APPLE_ISSUER_ID: "${{ secrets.APPLE_ISSUER_ID }}"
-          APPLE_KEY_CONTENT: "${{ secrets.APPLE_KEY_CONTENT }}"
-          SPACESHIP_CONNECT_API_KEY_ID: "${{ secrets.APPLE_KEY_ID }}"
-          SPACESHIP_CONNECT_API_ISSUER_ID: "${{ secrets.APPLE_ISSUER_ID }}"
-          SPACESHIP_CONNECT_API_KEY_FILEPATH: ""
-          SPACESHIP_CONNECT_API_KEY: "${{ secrets.APPLE_KEY_CONTENT }}"
         run: |
           cd capacitor/ios/App
           bundle install
@@ -76,7 +77,9 @@ jobs:
             --app_identifier "$DEVELOPER_APP_IDENTIFIER" \
             --readonly false \
             --skip_confirmation true \
-            --verbose
+            --verbose \
+            --keychain_name build.keychain \
+            --keychain_password "$KEYCHAIN_PASSWORD"
 
       - name: Clean up keychain
         if: always()

@@ -1,6 +1,6 @@
-app_identifier(ENV["DEVELOPER_APP_IDENTIFIER"] || "com.bobbyhiddn.asteroids") # The bundle identifier of your app
-apple_id(ENV["FASTLANE_APPLE_ID"]) # Your Apple Developer Portal username
-team_id(ENV["DEVELOPER_PORTAL_TEAM_ID"]) # Developer Portal Team ID
+app_identifier(ENV["DEVELOPER_APP_IDENTIFIER"])
+apple_id(ENV["FASTLANE_APPLE_ID"])
+team_id(ENV["DEVELOPER_PORTAL_TEAM_ID"])
 
 # For more information about the Appfile, see:
 #     https://docs.fastlane.tools/advanced/#appfile
