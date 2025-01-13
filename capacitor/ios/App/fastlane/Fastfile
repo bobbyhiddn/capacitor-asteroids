@@ -5,8 +5,10 @@ platform :ios do
   lane :closed_beta do
     setup_ci if ENV['CI']
 
-    # Use App Store Connect API key from JSON file
-    api_key_path("api_key.json")
+    # Configure App Store Connect API
+    app_store_connect_api_key(
+      api_key_path: "api_key.json"
+    )
 
     # Sync certificates and profiles
     sync_code_signing(
