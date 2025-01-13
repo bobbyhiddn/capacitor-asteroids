@@ -63,24 +63,12 @@ jobs:
           cache: 'npm'
           cache-dependency-path: './capacitor/package-lock.json'
 
-      # Setup Go for WASM build
-      - name: Setup Go
-        uses: actions/setup-go@v4
-        with:
-          go-version: '1.21'
-
-      # Build the game
-      - name: Build WASM game
-        run: |
-          GOOS=js GOARCH=wasm go build -o web/game.wasm
-          cp "$(go env GOROOT)/misc/wasm/wasm_exec.js" web/
-
-      # Copy game assets to capacitor
+      # Copy game assets to capacitor dist
       - name: Copy game assets to capacitor
         run: |
-          rm -rf capacitor/dist/*
-          cp web/game.wasm capacitor/dist/
-          cp web/wasm_exec.js capacitor/dist/
+          mkdir -p capacitor/dist
+          cp capacitor/src/assets/game.wasm capacitor/dist/
+          cp capacitor/src/assets/wasm_exec.js capacitor/dist/
           cp web/index.html capacitor/dist/
 
       # Setup keychain for certificates
