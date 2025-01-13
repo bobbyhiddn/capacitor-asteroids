@@ -33,19 +33,12 @@ jobs:
     runs-on: macos-latest
     env:
       MATCH_PASSWORD: ${{ secrets.MATCH_PASSWORD }}
-      GIT_AUTHORIZATION: ${{ secrets.GIT_AUTHORIZATION }}
-      FASTLANE_APPLE_ID: ${{ secrets.FASTLANE_APPLE_ID }}
-      FASTLANE_USER: ${{ secrets.FASTLANE_USER }}
-      FASTLANE_PASSWORD: ${{ secrets.FASTLANE_PASSWORD }}
-      FASTLANE_APPLE_TEAM_ID: ${{ secrets.DEVELOPER_PORTAL_TEAM_ID }}
+      MATCH_GIT_URL: "https://${{ secrets.GIT_AUTHORIZATION }}@github.com/bobbyhiddn/fastlane.git"
       DEVELOPER_APP_IDENTIFIER: ${{ secrets.DEVELOPER_APP_IDENTIFIER }}
       DEVELOPER_PORTAL_TEAM_ID: ${{ secrets.DEVELOPER_PORTAL_TEAM_ID }}
       APPLE_KEY_ID: ${{ secrets.APPLE_KEY_ID }}
       APPLE_ISSUER_ID: ${{ secrets.APPLE_ISSUER_ID }}
       APPLE_KEY_CONTENT: ${{ secrets.APPLE_KEY_CONTENT }}
-      SPACESHIP_CONNECT_API_KEY_ID: ${{ secrets.APPLE_KEY_ID }}
-      SPACESHIP_CONNECT_API_ISSUER_ID: ${{ secrets.APPLE_ISSUER_ID }}
-      SPACESHIP_CONNECT_API_KEY: ${{ secrets.APPLE_KEY_CONTENT }}
       KEYCHAIN_PASSWORD: ${{ secrets.TEMP_KEYCHAIN_PASSWORD }}
     steps:
       - uses: actions/checkout@v3

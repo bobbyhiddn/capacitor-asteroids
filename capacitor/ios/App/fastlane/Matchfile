@@ -1,11 +1,16 @@
-git_url("https://#{ENV['GIT_AUTHORIZATION']}@github.com/bobbyhiddn/fastlane.git")
-
+git_url(ENV["MATCH_GIT_URL"])
 storage_mode("git")
-
-type("appstore") # We want appstore certificates for TestFlight
-
+type("appstore")
 app_identifier([ENV["DEVELOPER_APP_IDENTIFIER"]])
-username(ENV["FASTLANE_APPLE_ID"]) # Your Apple Developer Portal username
+
+# Force API key authentication
+api_key_path(nil) # Disable file-based API key
+api_key({
+  key_id: ENV["APPLE_KEY_ID"],
+  issuer_id: ENV["APPLE_ISSUER_ID"],
+  key_content: ENV["APPLE_KEY_CONTENT"],
+  is_key_content_base64: true
+})
 
 # For all available options run `fastlane match --help`
 # Remove the # in the beginning of the line to enable the other options
