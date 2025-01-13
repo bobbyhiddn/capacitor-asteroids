@@ -58,9 +58,18 @@ jobs:
           security unlock-keychain -p "$KEYCHAIN_PASSWORD" build.keychain
           security set-keychain-settings
 
-      - name: Create App Store Connect API key JSON
+      - name: Create App Store Connect API key
         run: |
-          echo "{\"key_id\":\"$APPLE_KEY_ID\",\"issuer_id\":\"$APPLE_ISSUER_ID\",\"key\":\"$APPLE_KEY_CONTENT\"}" > api_key.json
+          mkdir -p fastlane_keys
+          
+          # Create the API key JSON file with properly formatted key content
+          cat > fastlane_keys/api_key.json << EOL
+          {
+            "key_id": "$APPLE_KEY_ID",
+            "issuer_id": "$APPLE_ISSUER_ID",
+            "key": "-----BEGIN PRIVATE KEY-----\n$APPLE_KEY_CONTENT\n-----END PRIVATE KEY-----"
+          }
+          EOL
 
       - name: Initialize Match and Generate Certificates
         run: |
@@ -77,10 +86,10 @@ jobs:
             --verbose \
             --keychain_name build.keychain \
             --keychain_password "$KEYCHAIN_PASSWORD" \
-            --api_key_path "../../../api_key.json"
+            --api_key_path "../../fastlane_keys/api_key.json"
 
-      - name: Clean up keychain
+      - name: Clean up
         if: always()
         run: |
           security delete-keychain build.keychain
-          rm -f api_key.json
+          rm -rf fastlane_keys
