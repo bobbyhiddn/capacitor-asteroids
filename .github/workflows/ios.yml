@@ -72,6 +72,17 @@ jobs:
           cd capacitor
           npm ci
 
+      - name: Build web app and sync to iOS
+        run: |
+          cd capacitor
+          npm run build
+          npx cap sync ios
+
+      - name: Copy Capacitor config files to iOS app directory
+        run: |
+          cd capacitor
+          cp -r config.xml ios/App/
+
       - name: Install iOS dependencies
         run: |
           cd capacitor/ios/App
