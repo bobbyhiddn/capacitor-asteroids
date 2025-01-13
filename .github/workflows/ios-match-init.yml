@@ -58,6 +58,10 @@ jobs:
           security unlock-keychain -p "$KEYCHAIN_PASSWORD" build.keychain
           security set-keychain-settings
 
+      - name: Create App Store Connect API key JSON
+        run: |
+          echo "{\"key_id\":\"$APPLE_KEY_ID\",\"issuer_id\":\"$APPLE_ISSUER_ID\",\"key\":\"$APPLE_KEY_CONTENT\"}" > api_key.json
+
       - name: Initialize Match and Generate Certificates
         run: |
           cd capacitor/ios/App
@@ -72,8 +76,11 @@ jobs:
             --skip_confirmation true \
             --verbose \
             --keychain_name build.keychain \
-            --keychain_password "$KEYCHAIN_PASSWORD"
+            --keychain_password "$KEYCHAIN_PASSWORD" \
+            --api_key_path "../../../api_key.json"
 
       - name: Clean up keychain
         if: always()
-        run: security delete-keychain build.keychain
+        run: |
+          security delete-keychain build.keychain
+          rm -f api_key.json
