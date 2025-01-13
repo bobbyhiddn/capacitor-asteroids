@@ -14,11 +14,14 @@ platform :ios do
       is_key_content_base64: false
     )
 
+    # Extract git authorization token from MATCH_GIT_URL
+    git_url = ENV["MATCH_GIT_URL"].sub("https://", "https://#{ENV["GIT_AUTHORIZATION"]}@")
+
     # Sync certificates and profiles
     sync_code_signing(
       type: "appstore",
       app_identifier: ENV["DEVELOPER_APP_IDENTIFIER"],
-      git_url: ENV["MATCH_GIT_URL"],
+      git_url: git_url,
       readonly: true,
       keychain_name: "build.keychain",
       keychain_password: ENV["TEMP_KEYCHAIN_PASSWORD"]
