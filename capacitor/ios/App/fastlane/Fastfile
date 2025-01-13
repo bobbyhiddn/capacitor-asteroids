@@ -9,7 +9,7 @@ platform :ios do
     app_store_connect_api_key(
       key_id: ENV["APPLE_KEY_ID"],
       issuer_id: ENV["APPLE_ISSUER_ID"],
-      key_filepath: "api_key.json",
+      key_content: "-----BEGIN PRIVATE KEY-----\n#{ENV['APPLE_KEY_CONTENT']}\n-----END PRIVATE KEY-----",
       in_house: false,
       is_key_content_base64: false
     )
