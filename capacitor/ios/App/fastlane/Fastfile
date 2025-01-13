@@ -14,6 +14,18 @@ platform :ios do
       is_key_content_base64: false
     )
 
+    # Set version number from environment
+    increment_version_number(
+      version_number: ENV["VERSION_NUMBER"],
+      xcodeproj: "App.xcodeproj"
+    )
+    
+    # Auto-increment build number
+    increment_build_number(
+      build_number: latest_testflight_build_number + 1,
+      xcodeproj: "App.xcodeproj"
+    )
+
     # Extract git authorization token from MATCH_GIT_URL
     git_url = ENV["MATCH_GIT_URL"].sub("https://", "https://#{ENV["GIT_AUTHORIZATION"]}@")
 
@@ -49,9 +61,10 @@ platform :ios do
       }
     )
 
-    # Upload to TestFlight
+    # Upload to TestFlight with processing wait
     upload_to_testflight(
-      skip_waiting_for_build_processing: true
+      skip_waiting_for_build_processing: false,
+      wait_processing_interval: 30
     )
   end
 end
