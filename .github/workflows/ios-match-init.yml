@@ -59,7 +59,7 @@ jobs:
           APPLE_KEY_ID: "${{ secrets.APPLE_KEY_ID }}"
           APPLE_ISSUER_ID: "${{ secrets.APPLE_ISSUER_ID }}"
           APPLE_KEY_CONTENT: "${{ secrets.APPLE_KEY_CONTENT }}"
-          GIT_URL: "https://${{ secrets.GIT_AUTHORIZATION }}@github.com/${{ secrets.GIT_URL }}"
+          GIT_URL: "https://bobbyhiddn:${{ secrets.GIT_AUTHORIZATION }}@github.com/${{ secrets.GIT_URL }}"
         run: |
           cd capacitor/ios/App
           bundle install
