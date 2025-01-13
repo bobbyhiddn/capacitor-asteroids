@@ -1,0 +1,215 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <meta name="color-scheme" content="light dark">
+    <title>Asteroids - WebAssembly</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        html {
+            width: 100%;
+            height: 100dvh; /* Use dynamic viewport height */
+            background-color: #000000;
+            color-scheme: dark;
+        }
+
+        body {
+            width: 100%;
+            height: 100dvh;
+            position: fixed;
+            overflow: hidden;
+            margin: 0;
+            padding: env(safe-area-inset-top) env(safe-area-inset-right) env(safe-area-inset-bottom) env(safe-area-inset-left);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background-color: #000000;
+            touch-action: none;
+            -webkit-touch-callout: none;
+            -webkit-tap-highlight-color: transparent;
+            -webkit-user-select: none;
+            user-select: none;
+        }
+
+        #canvas-container {
+            width: 100%;
+            height: 100%;
+            position: fixed;
+            top: 0;
+            left: 0;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            overflow: hidden;
+            background-color: #000000;
+        }
+
+        canvas {
+            position: absolute;
+            background-color: #000000;
+            touch-action: none;
+            image-rendering: pixelated;
+            image-rendering: crisp-edges;
+        }
+
+        @supports (-webkit-touch-callout: none) {
+            /* iOS-specific fixes */
+            html, body {
+                height: -webkit-fill-available;
+            }
+            
+            #canvas-container {
+                height: -webkit-fill-available;
+            }
+        }
+
+        /* Prevent pull-to-refresh on mobile browsers */
+        @media (pointer: coarse) {
+            body {
+                overflow: hidden;
+                overscroll-behavior: none;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div id="canvas-container">
+        <canvas id="canvas"></canvas>
+    </div>
+    <script src="wasm_exec.js"></script>
+    <script>
+        if (!WebAssembly.instantiateStreaming) {
+            WebAssembly.instantiateStreaming = async (resp, importObject) => {
+                const source = await (await resp).arrayBuffer();
+                return await WebAssembly.instantiate(source, importObject);
+            };
+        }
+
+        // Lock screen orientation if possible
+        async function lockOrientation() {
+            try {
+                if (screen.orientation && screen.orientation.lock) {
+                    await screen.orientation.lock('landscape');
+                }
+            } catch (e) {
+                console.log('Orientation lock not supported');
+            }
+        }
+
+        function getViewportSize() {
+            const vh = window.innerHeight;
+            const vw = window.innerWidth;
+            // Some browsers include UI elements in innerHeight, use documentElement if available
+            const docHeight = document.documentElement.clientHeight;
+            return {
+                width: vw,
+                height: Math.min(vh, docHeight)
+            };
+        }
+
+        function updateCanvasSize() {
+            const canvas = document.getElementById('canvas');
+            const container = document.getElementById('canvas-container');
+            
+            // Reset canvas style
+            canvas.style.cssText = '';
+            
+            // Get viewport size
+            const viewport = getViewportSize();
+            const containerWidth = viewport.width;
+            const containerHeight = viewport.height;
+            
+            // Set internal resolution
+            canvas.width = 800;
+            canvas.height = 600;
+            
+            // Calculate scaling
+            const isLandscape = containerWidth > containerHeight;
+            let targetWidth, targetHeight;
+            
+            if (isLandscape) {
+                targetHeight = containerHeight;
+                targetWidth = targetHeight * (4/3);
+                
+                if (targetWidth > containerWidth) {
+                    targetWidth = containerWidth;
+                    targetHeight = targetWidth * (3/4);
+                }
+            } else {
+                targetWidth = containerWidth;
+                targetHeight = targetWidth * (3/4);
+                
+                if (targetHeight > containerHeight) {
+                    targetHeight = containerHeight;
+                    targetWidth = targetHeight * (4/3);
+                }
+            }
+            
+            // Apply dimensions with transform for better performance
+            targetWidth = Math.floor(targetWidth);
+            targetHeight = Math.floor(targetHeight);
+            
+            canvas.style.width = targetWidth + 'px';
+            canvas.style.height = targetHeight + 'px';
+            
+            // Center using transform instead of left/top
+            const translateX = (containerWidth - targetWidth) / 2;
+            const translateY = (containerHeight - targetHeight) / 2;
+            canvas.style.transform = `translate(${translateX}px, ${translateY}px)`;
+        }
+
+        // Debounced resize handler
+        let resizeTimeout;
+        function handleResize() {
+            clearTimeout(resizeTimeout);
+            resizeTimeout = setTimeout(updateCanvasSize, 100);
+        }
+
+        // Handle orientation change
+        function handleOrientationChange() {
+            // Update immediately and after a delay
+            updateCanvasSize();
+            // Multiple updates to handle different browser behaviors
+            setTimeout(updateCanvasSize, 100);
+            setTimeout(updateCanvasSize, 300);
+        }
+
+        // iOS-specific fixes
+        function fixIOSHeightBug() {
+            document.body.style.height = window.innerHeight + 'px';
+            document.documentElement.style.height = window.innerHeight + 'px';
+        }
+
+        // Add event listeners
+        window.addEventListener('resize', handleResize, false);
+        window.addEventListener('orientationchange', handleOrientationChange, false);
+        
+        // iOS height fixes
+        if (/iPhone|iPad|iPod/.test(navigator.platform)) {
+            window.addEventListener('resize', fixIOSHeightBug);
+            fixIOSHeightBug();
+        }
+
+        // Initialize
+        document.addEventListener('DOMContentLoaded', async () => {
+            await lockOrientation();
+            updateCanvasSize();
+            setTimeout(updateCanvasSize, 100);
+        });
+    </script>
+    <!-- WebAssembly initialization -->
+    <script src="./assets/wasm_exec.js"></script>
+    <script>
+        const go = new Go();
+        WebAssembly.instantiateStreaming(fetch("./assets/game.wasm"), go.importObject).then((result) => {
+            go.run(result.instance);
+        });
+    </script>
+</body>
+</html>
