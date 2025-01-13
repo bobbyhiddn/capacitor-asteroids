@@ -32,8 +32,8 @@ platform :ios do
       use_automatic_signing: false,
       path: "App.xcodeproj",
       team_id: ENV["DEVELOPER_PORTAL_TEAM_ID"],
-      profile_name: ENV["PROVISIONING_PROFILE_SPECIFIER"],
       code_sign_identity: "iPhone Distribution",
+      profile_name: "match AppStore #{ENV['DEVELOPER_APP_IDENTIFIER']}",
       bundle_identifier: ENV["DEVELOPER_APP_IDENTIFIER"]
     )
 
@@ -44,7 +44,7 @@ platform :ios do
       export_method: "app-store",
       export_options: {
         provisioningProfiles: { 
-          ENV["DEVELOPER_APP_IDENTIFIER"] => ENV["PROVISIONING_PROFILE_SPECIFIER"]
+          ENV["DEVELOPER_APP_IDENTIFIER"] => "match AppStore #{ENV['DEVELOPER_APP_IDENTIFIER']}"
         }
       }
     )
