@@ -14,16 +14,16 @@ jobs:
       - name: Check if match repository is initialized
         id: check
         env:
-          GIT_URL: ${{ secrets.GIT_URL }}
+          MATCH_GIT_URL: ${{ secrets.MATCH_GIT_URL }}
           GIT_AUTHORIZATION: ${{ secrets.GIT_AUTHORIZATION }}
         run: |
-          # Extract repo details from GIT_URL
-          REPO_URL=$(echo $GIT_URL | sed 's/https:\/\///')
+          # Extract repo owner and name from the URL
+          REPO_PATH=$(echo $MATCH_GIT_URL | sed -n 's/.*github.com[:\/]\([^\/]*\/[^\/]*\).*/\1/p' | sed 's/\.git$//')
           
-          # Try to fetch repository contents
+          # Check repository contents
           HTTP_STATUS=$(curl -s -o /dev/null -w "%{http_code}" \
-            -H "Authorization: Bearer $GIT_AUTHORIZATION" \
-            "https://api.github.com/repos/${REPO_URL#github.com/}/contents")
+            -H "Authorization: token $GIT_AUTHORIZATION" \
+            "https://api.github.com/repos/${REPO_PATH}/contents")
           
           if [ "$HTTP_STATUS" = "200" ]; then
             echo "Match repository exists and contains certificates."
@@ -78,16 +78,27 @@ jobs:
           bundle install
           pod install
 
+      - name: Create App Store Connect API key
+        working-directory: capacitor/ios/App
+        run: |
+          # Create the API key JSON file with properly formatted key content
+          cat > api_key.json << EOL
+          {
+            "key_id": "${{ secrets.APPLE_KEY_ID }}",
+            "issuer_id": "${{ secrets.APPLE_ISSUER_ID }}",
+            "key": "-----BEGIN PRIVATE KEY-----\n${{ secrets.APPLE_KEY_CONTENT }}\n-----END PRIVATE KEY-----",
+            "in_house": false
+          }
+          EOL
+
       - name: Deploy iOS Beta to TestFlight via Fastlane
         env:
           APP_STORE_CONNECT_TEAM_ID: "${{ secrets.APP_STORE_CONNECT_TEAM_ID }}"
           DEVELOPER_APP_ID: "${{ secrets.DEVELOPER_APP_ID }}"
           DEVELOPER_APP_IDENTIFIER: "${{ secrets.DEVELOPER_APP_IDENTIFIER }}"
           DEVELOPER_PORTAL_TEAM_ID: "${{ secrets.DEVELOPER_PORTAL_TEAM_ID }}"
-          FASTLANE_APPLE_ID: "${{ secrets.FASTLANE_APPLE_ID }}"
-          FASTLANE_USER: "${{ secrets.FASTLANE_USER }}"
-          FASTLANE_PASSWORD: "${{ secrets.FASTLANE_PASSWORD }}"
           MATCH_PASSWORD: "${{ secrets.MATCH_PASSWORD }}"
+          MATCH_GIT_URL: "${{ secrets.MATCH_GIT_URL }}"
           GIT_AUTHORIZATION: "${{ secrets.GIT_AUTHORIZATION }}"
           PROVISIONING_PROFILE_SPECIFIER: "${{ secrets.PROVISIONING_PROFILE_SPECIFIER }}"
           TEMP_KEYCHAIN_PASSWORD: "${{ secrets.TEMP_KEYCHAIN_PASSWORD }}"
@@ -98,7 +109,8 @@ jobs:
           cd capacitor/ios/App
           bundle exec fastlane closed_beta
 
-      - name: Clean up keychain
+      - name: Clean up
         if: always()
         run: |
           security delete-keychain build.keychain
+          rm -f capacitor/ios/App/api_key.json
