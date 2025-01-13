@@ -82,7 +82,6 @@
     <div id="canvas-container">
         <canvas id="canvas"></canvas>
     </div>
-    <script src="./assets/wasm_exec.js"></script>
     <script>
         if (!WebAssembly.instantiateStreaming) {
             WebAssembly.instantiateStreaming = async (resp, importObject) => {
@@ -203,44 +202,64 @@
             setTimeout(updateCanvasSize, 100);
         });
     </script>
-    <!-- WebAssembly initialization -->
-    <script src="./assets/wasm_exec.js"></script>
     <script>
-        document.addEventListener('DOMContentLoaded', async function() {
-            console.log('DOM loaded, initializing WebAssembly...');
-            
-            if (!WebAssembly.instantiateStreaming) {
-                console.log('WebAssembly.instantiateStreaming not available, using polyfill');
-                WebAssembly.instantiateStreaming = async (resp, importObject) => {
-                    const source = await (await resp).arrayBuffer();
-                    return await WebAssembly.instantiate(source, importObject);
-                };
+        // Helper function to get the correct asset path based on platform
+        function getAssetPath(filename) {
+            // Check if we're running in Capacitor
+            if (window.Capacitor) {
+                // Use public URL for Capacitor
+                return filename;
             }
+            // Use relative path for web
+            return `./assets/${filename}`;
+        }
 
-            try {
-                const go = new Go();
-                const wasmPath = './assets/game.wasm';
-                console.log('Attempting to fetch WASM from:', wasmPath);
+        // Load wasm_exec.js dynamically
+        const script = document.createElement('script');
+        script.src = getAssetPath('wasm_exec.js');
+        script.onload = function() {
+            // Once wasm_exec.js is loaded, initialize WebAssembly
+            document.addEventListener('DOMContentLoaded', async function() {
+                console.log('DOM loaded, initializing WebAssembly...');
                 
-                const response = await fetch(wasmPath);
-                if (!response.ok) {
-                    throw new Error(`Failed to fetch WASM file: ${response.status} ${response.statusText}`);
+                if (!WebAssembly.instantiateStreaming) {
+                    console.log('WebAssembly.instantiateStreaming not available, using polyfill');
+                    WebAssembly.instantiateStreaming = async (resp, importObject) => {
+                        const source = await (await resp).arrayBuffer();
+                        return await WebAssembly.instantiate(source, importObject);
+                    };
                 }
-                
-                console.log('WASM file fetched successfully, instantiating...');
-                const result = await WebAssembly.instantiateStreaming(response, go.importObject);
-                console.log('WebAssembly instantiated successfully, starting game...');
-                go.run(result.instance);
-            } catch (err) {
-                console.error('Failed to load WebAssembly:', err);
-                console.error('Error details:', {
-                    message: err.message,
-                    stack: err.stack,
-                    name: err.name
-                });
-                alert('Failed to load game. Please check the console for details.');
-            }
-        });
+
+                try {
+                    const go = new Go();
+                    const wasmPath = getAssetPath('game.wasm');
+                    console.log('Platform:', window.Capacitor ? 'Capacitor' : 'Web');
+                    console.log('Attempting to fetch WASM from:', wasmPath);
+                    
+                    const response = await fetch(wasmPath);
+                    if (!response.ok) {
+                        throw new Error(`Failed to fetch WASM file: ${response.status} ${response.statusText}`);
+                    }
+                    
+                    console.log('WASM file fetched successfully, instantiating...');
+                    const result = await WebAssembly.instantiateStreaming(response, go.importObject);
+                    console.log('WebAssembly instantiated successfully, starting game...');
+                    go.run(result.instance);
+                } catch (err) {
+                    console.error('Failed to load WebAssembly:', err);
+                    console.error('Error details:', {
+                        message: err.message,
+                        stack: err.stack,
+                        name: err.name
+                    });
+                    alert('Failed to load game. Please check the console for details.');
+                }
+            });
+        };
+        script.onerror = function(e) {
+            console.error('Failed to load wasm_exec.js:', e);
+        };
+        document.head.appendChild(script);
     </script>
 </body>
 </html>

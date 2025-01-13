@@ -82,7 +82,7 @@
     <div id="canvas-container">
         <canvas id="canvas"></canvas>
     </div>
-    <script src="wasm_exec.js"></script>
+    <script src="./assets/wasm_exec.js"></script>
     <script>
         if (!WebAssembly.instantiateStreaming) {
             WebAssembly.instantiateStreaming = async (resp, importObject) => {
@@ -203,15 +203,9 @@
             setTimeout(updateCanvasSize, 100);
         });
     </script>
+    <!-- WebAssembly initialization -->
+    <script src="./assets/wasm_exec.js"></script>
     <script>
-        // Error handling
-        window.onerror = function(msg, url, line, col, error) {
-            console.error('Error:', msg, '\nurl:', url, '\nline:', line);
-            alert('Error: ' + msg + '\nurl: ' + url + '\nline: ' + line);
-            return false;
-        };
-
-        // WebAssembly initialization
         document.addEventListener('DOMContentLoaded', async function() {
             console.log('DOM loaded, initializing WebAssembly...');
             
@@ -225,16 +219,26 @@
 
             try {
                 const go = new Go();
-                console.log('Fetching game.wasm...');
-                const result = await WebAssembly.instantiateStreaming(
-                    fetch('game.wasm'),
-                    go.importObject
-                );
-                console.log('WebAssembly loaded successfully');
+                const wasmPath = './assets/game.wasm';
+                console.log('Attempting to fetch WASM from:', wasmPath);
+                
+                const response = await fetch(wasmPath);
+                if (!response.ok) {
+                    throw new Error(`Failed to fetch WASM file: ${response.status} ${response.statusText}`);
+                }
+                
+                console.log('WASM file fetched successfully, instantiating...');
+                const result = await WebAssembly.instantiateStreaming(response, go.importObject);
+                console.log('WebAssembly instantiated successfully, starting game...');
                 go.run(result.instance);
             } catch (err) {
                 console.error('Failed to load WebAssembly:', err);
-                alert('Failed to load game: ' + err.message);
+                console.error('Error details:', {
+                    message: err.message,
+                    stack: err.stack,
+                    name: err.name
+                });
+                alert('Failed to load game. Please check the console for details.');
             }
         });
     </script>
