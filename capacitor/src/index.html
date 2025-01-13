@@ -82,7 +82,7 @@
     <div id="canvas-container">
         <canvas id="canvas"></canvas>
     </div>
-    <script src="wasm_exec.js"></script>
+    <script src="./assets/wasm_exec.js"></script>
     <script>
         if (!WebAssembly.instantiateStreaming) {
             WebAssembly.instantiateStreaming = async (resp, importObject) => {
@@ -206,9 +206,40 @@
     <!-- WebAssembly initialization -->
     <script src="./assets/wasm_exec.js"></script>
     <script>
-        const go = new Go();
-        WebAssembly.instantiateStreaming(fetch("./assets/game.wasm"), go.importObject).then((result) => {
-            go.run(result.instance);
+        document.addEventListener('DOMContentLoaded', async function() {
+            console.log('DOM loaded, initializing WebAssembly...');
+            
+            if (!WebAssembly.instantiateStreaming) {
+                console.log('WebAssembly.instantiateStreaming not available, using polyfill');
+                WebAssembly.instantiateStreaming = async (resp, importObject) => {
+                    const source = await (await resp).arrayBuffer();
+                    return await WebAssembly.instantiate(source, importObject);
+                };
+            }
+
+            try {
+                const go = new Go();
+                const wasmPath = './assets/game.wasm';
+                console.log('Attempting to fetch WASM from:', wasmPath);
+                
+                const response = await fetch(wasmPath);
+                if (!response.ok) {
+                    throw new Error(`Failed to fetch WASM file: ${response.status} ${response.statusText}`);
+                }
+                
+                console.log('WASM file fetched successfully, instantiating...');
+                const result = await WebAssembly.instantiateStreaming(response, go.importObject);
+                console.log('WebAssembly instantiated successfully, starting game...');
+                go.run(result.instance);
+            } catch (err) {
+                console.error('Failed to load WebAssembly:', err);
+                console.error('Error details:', {
+                    message: err.message,
+                    stack: err.stack,
+                    name: err.name
+                });
+                alert('Failed to load game. Please check the console for details.');
+            }
         });
     </script>
 </body>

@@ -7,5 +7,9 @@
       "launchAutoHide": true,
       "launchShowDuration": 2000
     }
+  },
+  "server": {
+    "allowNavigation": ["*"],
+    "cleartext": true
   }
 }

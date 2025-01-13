@@ -6,9 +6,9 @@ on:
   workflow_dispatch:
     inputs:
       version_number:
-        description: 'Version number (e.g., 1.011)'
+        description: 'Version number (e.g., 1.012)'
         required: true
-        default: '1.011'
+        default: '1.012'
 
 jobs:
   check_match_setup:
@@ -66,10 +66,10 @@ jobs:
       # Copy game assets to capacitor dist
       - name: Copy game assets to capacitor
         run: |
-          mkdir -p capacitor/dist
-          cp capacitor/src/assets/game.wasm capacitor/dist/
-          cp capacitor/src/assets/wasm_exec.js capacitor/dist/
-          cp web/index.html capacitor/dist/
+          mkdir -p capacitor/dist/assets
+          cp capacitor/src/assets/game.wasm capacitor/dist/assets/
+          cp capacitor/src/assets/wasm_exec.js capacitor/dist/assets/
+          cp capacitor/src/index.html capacitor/dist/
 
       # Setup keychain for certificates
       - name: Setup Keychain
