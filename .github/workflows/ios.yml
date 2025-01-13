@@ -64,17 +64,10 @@ jobs:
           cache-dependency-path: './capacitor/package-lock.json'
 
       # Copy game assets to capacitor dist
-      - name: Copy game assets to capacitor
+      - name: Copy game assets
         run: |
-          mkdir -p capacitor/dist/assets
-          cp capacitor/src/assets/game.wasm capacitor/dist/assets/
-          cp capacitor/src/assets/wasm_exec.js capacitor/dist/assets/
-          cp capacitor/src/index.html capacitor/dist/
-          
-          # Also copy to iOS public directory
-          mkdir -p capacitor/ios/App/App/public/assets
-          cp capacitor/src/assets/game.wasm capacitor/ios/App/App/public/assets/
-          cp capacitor/src/assets/wasm_exec.js capacitor/ios/App/App/public/assets/
+          cd capacitor
+          node scripts/copy-assets.js
 
       # Setup keychain for certificates
       - name: Setup Keychain

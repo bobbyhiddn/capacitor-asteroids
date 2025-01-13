@@ -2,14 +2,19 @@
   "appId": "com.bobbyhiddn.asteroids",
   "appName": "ecs-asteroids",
   "webDir": "dist",
+  "server": {
+    "iosScheme": "file",
+    "androidScheme": "file",
+    "hostname": "app",
+    "cleartext": true,
+    "allowNavigation": ["*"]
+  },
   "plugins": {
     "SplashScreen": {
       "launchAutoHide": true,
-      "launchShowDuration": 2000
+      "launchShowDuration": 2000,
+      "backgroundColor": "#000000",
+      "spinnerColor": "#FFFFFF"
     }
-  },
-  "server": {
-    "allowNavigation": ["*"],
-    "cleartext": true
   }
 }

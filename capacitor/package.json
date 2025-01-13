@@ -10,7 +10,9 @@
   "scripts": {
     "start": "vite",
     "build": "vite build",
-    "preview": "vite preview"
+    "preview": "vite preview",
+    "ios:prepare": "npm run build && npx cap sync ios && node scripts/copy-assets.js",
+    "ios:build": "npm run ios:prepare && npx cap open ios"
   },
   "dependencies": {
     "@capacitor/core": "latest",
@@ -19,7 +21,9 @@
   },
   "devDependencies": {
     "@capacitor/cli": "latest",
-    "vite": "^5.4.2"
+    "fs-extra": "^11.2.0",
+    "path": "^0.12.7",
+    "vite": "^5.0.0"
   },
   "author": "",
   "license": "ISC"

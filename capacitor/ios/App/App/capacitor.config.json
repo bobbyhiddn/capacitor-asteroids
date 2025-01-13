@@ -2,13 +2,24 @@
 	"appId": "com.bobbyhiddn.asteroids",
 	"appName": "ecs-asteroids",
 	"webDir": "dist",
+	"server": {
+		"iosScheme": "file",
+		"androidScheme": "file",
+		"hostname": "app",
+		"cleartext": true,
+		"allowNavigation": [
+			"*"
+		]
+	},
 	"plugins": {
 		"SplashScreen": {
-			"launchAutoHide": false
+			"launchAutoHide": true,
+			"launchShowDuration": 2000,
+			"backgroundColor": "#000000",
+			"spinnerColor": "#FFFFFF"
 		}
 	},
 	"packageClassList": [
-		"CAPCameraPlugin",
 		"SplashScreenPlugin"
 	]
 }
