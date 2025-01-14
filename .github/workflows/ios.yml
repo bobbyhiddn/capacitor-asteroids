@@ -63,11 +63,17 @@ jobs:
           cache: 'npm'
           cache-dependency-path: './capacitor/package-lock.json'
 
-      # Copy game assets to capacitor dist
-      - name: Copy game assets
+      - name: Install dependencies
         run: |
           cd capacitor
+          npm ci
+
+      - name: Build and copy assets
+        run: |
+          cd capacitor
+          npm run build
           node scripts/copy-assets.js
+          npx cap sync ios
 
       # Setup keychain for certificates
       - name: Setup Keychain
@@ -77,13 +83,6 @@ jobs:
           security default-keychain -s build.keychain
           security unlock-keychain -p "${{ secrets.TEMP_KEYCHAIN_PASSWORD }}" build.keychain
           security set-keychain-settings
-
-      - name: Install dependencies and build
-        run: |
-          cd capacitor
-          npm ci
-          npm run build
-          npx cap sync ios
 
       - name: Install iOS dependencies
         run: |
