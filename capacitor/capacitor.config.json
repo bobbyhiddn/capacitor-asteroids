@@ -1,7 +1,8 @@
 {
-  "appId": "com.bobbyhiddn.asteroids",
+  "appId": "io.codeium.asteroids",
   "appName": "ecs-asteroids",
   "webDir": "dist",
+  "bundledWebRuntime": false,
   "server": {
     "iosScheme": "file",
     "androidScheme": "file",
@@ -15,6 +16,12 @@
       "launchShowDuration": 2000,
       "backgroundColor": "#000000",
       "spinnerColor": "#FFFFFF"
+    },
+    "CapacitorHaptics": {
+      "enabled": true
     }
+  },
+  "ios": {
+    "orientation": "landscape"
   }
 }
