@@ -11,6 +11,8 @@ import (
 	"github.com/bobbyhiddn/ecs-asteroids/render"
 	"github.com/hajimehoshi/ebiten/v2"
 	"github.com/hajimehoshi/ebiten/v2/ebitenutil"
+	"github.com/hajimehoshi/ebiten/v2/text"
+	"golang.org/x/image/font/basicfont"
 )
 
 type RenderSystem struct {
@@ -57,6 +59,12 @@ func (s *RenderSystem) Draw(screen *ebiten.Image) {
 	players := s.world.Components["components.Player"]
 	explosions := s.world.Components["components.Explosion"]
 
+	// Draw high score at the top center first
+	if scores := s.scoreSystem.GetTopScores(); len(scores) > 0 {
+		highScoreText := fmt.Sprintf("HIGH SCORE: %d", scores[0].Value)
+		render.DrawCenteredScaledText(screen, highScoreText, 20, 2.0, color.White, render.DefaultFace)
+	}
+
 	// Draw all renderable entities
 	for id, renderableInterface := range renderables {
 		renderable := renderableInterface.(components.Renderable)
@@ -95,10 +103,9 @@ func (s *RenderSystem) Draw(screen *ebiten.Image) {
 	// Draw UI
 	for _, player := range players {
 		if p, ok := player.(components.Player); ok {
-			// Draw score
-			ebitenutil.DebugPrintAt(screen, fmt.Sprintf("Score: %d", p.Score), 10, 10)
-			// Draw lives
-			ebitenutil.DebugPrintAt(screen, fmt.Sprintf("Lives: %d", p.Lives), 10, 30)
+			// Draw score and lives in the top left
+			render.DrawText(screen, fmt.Sprintf("Score: %d", p.Score), 10, 20, color.White, render.DefaultFace)
+			render.DrawText(screen, fmt.Sprintf("Lives: %d", p.Lives), 10, 40, color.White, render.DefaultFace)
 
 			// If game is over, draw high scores
 			if p.IsGameOver {
@@ -117,14 +124,24 @@ func (s *RenderSystem) drawGameOver(screen *ebiten.Image, currentScore int) {
 
 	// Draw Game Over text
 	gameOverText := "GAME OVER"
-	ebitenutil.DebugPrintAt(screen, gameOverText, int(centerX)-30, int(startY))
+	bound := text.BoundString(basicfont.Face7x13, gameOverText)
+	x := int(centerX) - bound.Dx()/2
+	y := int(startY)
+	text.Draw(screen, gameOverText, basicfont.Face7x13, x, y, color.White)
 
 	// Draw current score
 	currentScoreText := fmt.Sprintf("Your Score: %d", currentScore)
-	ebitenutil.DebugPrintAt(screen, currentScoreText, int(centerX)-40, int(startY)+30)
+	bound = text.BoundString(basicfont.Face7x13, currentScoreText)
+	x = int(centerX) - bound.Dx()/2
+	y = int(startY) + 30
+	text.Draw(screen, currentScoreText, basicfont.Face7x13, x, y, color.White)
 
 	// Draw high scores
-	ebitenutil.DebugPrintAt(screen, "HIGH SCORES", int(centerX)-40, int(startY)+60)
+	highScoresText := "HIGH SCORES"
+	bound = text.BoundString(basicfont.Face7x13, highScoresText)
+	x = int(centerX) - bound.Dx()/2
+	y = int(startY) + 60
+	text.Draw(screen, highScoresText, basicfont.Face7x13, x, y, color.White)
 
 	topScores := s.scoreSystem.GetTopScores()
 	for i, score := range topScores {
@@ -132,9 +149,16 @@ func (s *RenderSystem) drawGameOver(screen *ebiten.Image, currentScore int) {
 			break
 		}
 		scoreText := fmt.Sprintf("%d. %d pts", i+1, score.Value)
-		ebitenutil.DebugPrintAt(screen, scoreText, int(centerX)-40, int(startY)+90+i*20)
+		bound = text.BoundString(basicfont.Face7x13, scoreText)
+		x = int(centerX) - bound.Dx()/2
+		y = int(startY) + 90 + i*20
+		text.Draw(screen, scoreText, basicfont.Face7x13, x, y, color.White)
 	}
 
 	// Draw restart instruction
-	ebitenutil.DebugPrintAt(screen, "Press SPACE to restart", int(centerX)-60, int(startY)+200)
+	restartText := "Press SPACE to restart"
+	bound = text.BoundString(basicfont.Face7x13, restartText)
+	x = int(centerX) - bound.Dx()/2
+	y = int(startY) + 200
+	text.Draw(screen, restartText, basicfont.Face7x13, x, y, color.White)
 }

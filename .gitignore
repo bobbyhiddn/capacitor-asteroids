@@ -20,3 +20,5 @@ ebiten-asteroids
 **/__pycache__
 
 *.zip
+
+.github/workflows/auth/*.p8
