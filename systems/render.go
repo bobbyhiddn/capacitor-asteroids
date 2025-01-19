@@ -103,9 +103,9 @@ func (s *RenderSystem) Draw(screen *ebiten.Image) {
 	// Draw UI
 	for _, player := range players {
 		if p, ok := player.(components.Player); ok {
-			// Draw score and lives in the top left
-			render.DrawText(screen, fmt.Sprintf("Score: %d", p.Score), 10, 20, color.White, render.DefaultFace)
-			render.DrawText(screen, fmt.Sprintf("Lives: %d", p.Lives), 10, 40, color.White, render.DefaultFace)
+			// Draw score and lives in the top left with larger text
+			render.DrawCenteredScaledText(screen, fmt.Sprintf("Score: %d", p.Score), 30, 2.0, color.White, render.DefaultFace)
+			render.DrawCenteredScaledText(screen, fmt.Sprintf("Lives: %d", p.Lives), 70, 2.0, color.White, render.DefaultFace)
 
 			// If game is over, draw high scores
 			if p.IsGameOver {
