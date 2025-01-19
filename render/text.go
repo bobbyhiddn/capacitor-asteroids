@@ -53,3 +53,22 @@ func DrawCenteredScaledText(screen *ebiten.Image, str string, y int, scale float
 func DrawText(screen *ebiten.Image, str string, x, y int, clr color.Color, face font.Face) {
 	text.Draw(screen, str, face, x, y, clr)
 }
+
+// DrawScaledText draws text at the specified position with scaling
+func DrawScaledText(screen *ebiten.Image, str string, x, y int, scale float64, clr color.Color, face font.Face) {
+	// Create a temporary image to draw the text
+	bound := text.BoundString(face, str)
+	w := bound.Dx()
+	h := bound.Dy()
+	tmpImg := ebiten.NewImage(w, h)
+
+	// Draw the text onto the temporary image
+	text.Draw(tmpImg, str, face, 0, -bound.Min.Y, clr)
+
+	// Create options for drawing the scaled image
+	opts := &ebiten.DrawImageOptions{}
+	opts.GeoM.Scale(scale, scale)
+	opts.GeoM.Translate(float64(x), float64(y))
+
+	screen.DrawImage(tmpImg, opts)
+}

@@ -103,9 +103,14 @@ func (s *RenderSystem) Draw(screen *ebiten.Image) {
 	// Draw UI
 	for _, player := range players {
 		if p, ok := player.(components.Player); ok {
-			// Draw score and lives in the top left with larger text
-			render.DrawCenteredScaledText(screen, fmt.Sprintf("Score: %d", p.Score), 30, 2.0, color.White, render.DefaultFace)
-			render.DrawCenteredScaledText(screen, fmt.Sprintf("Lives: %d", p.Lives), 70, 2.0, color.White, render.DefaultFace)
+			// Draw score
+			render.DrawScaledText(screen, fmt.Sprintf("Score: %d", p.Score), 10, 25, 1.5, color.White, render.DefaultFace)
+
+			// Draw lives as ship icons
+			render.DrawScaledText(screen, "Lives:", 10, 60, 1.5, color.White, render.DefaultFace)
+			for i := 0; i < p.Lives; i++ {
+				render.DrawLifeShip(screen, float64(89+i*35), 73)
+			}
 
 			// If game is over, draw high scores
 			if p.IsGameOver {

@@ -150,3 +150,23 @@ func transformPoint(x, y, centerX, centerY, angle float64) point {
 func drawLine(screen *ebiten.Image, p1, p2 point, clr color.Color) {
 	ebitenutil.DrawLine(screen, p1.x, p1.y, p2.x, p2.y, clr)
 }
+
+// DrawLifeShip draws a small ship icon for the lives display
+func DrawLifeShip(screen *ebiten.Image, x, y float64) {
+	scale := 1.6  // Doubled from 0.8
+	angle := -math.Pi / 2  // Rotate upward
+	// Ship vertices (triangle) - scaled version of the main ship
+	basePoints := []struct{ x, y float64 }{
+		{-5, 5},   // Bottom left
+		{10, 0},   // Tip
+		{-5, -5},  // Bottom right
+		{-5, 5},   // Back to start to close the shape
+	}
+
+	// Transform and draw ship lines
+	for i := 0; i < len(basePoints)-1; i++ {
+		p1 := transformPoint(basePoints[i].x*scale, basePoints[i].y*scale, x, y, angle)
+		p2 := transformPoint(basePoints[i+1].x*scale, basePoints[i+1].y*scale, x, y, angle)
+		ebitenutil.DrawLine(screen, p1.x, p1.y, p2.x, p2.y, color.White)
+	}
+}
