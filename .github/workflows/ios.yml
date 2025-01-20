@@ -102,11 +102,10 @@ jobs:
       - name: Update version in GitHub
         if: success()
         run: |
-          # Update the version secret using a personal access token
-          # Note: This requires a PAT with repo scope stored in GH_PAT
+          # Update the version secret using the git authorization token
           gh secret set IOS_VERSION --body "${{ steps.next_version.outputs.NEXT_VERSION }}"
         env:
-          GH_TOKEN: ${{ secrets.GH_PAT }}
+          GH_TOKEN: ${{ secrets.GIT_AUTHORIZATION }}
 
       - name: Setup Ruby
         uses: ruby/setup-ruby@v1
