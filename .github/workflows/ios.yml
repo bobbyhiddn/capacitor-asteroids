@@ -23,6 +23,7 @@ permissions:
   contents: read
   deployments: write
   actions: write
+  variables: write
 
 jobs:
   check_match_setup:
