@@ -90,10 +90,20 @@ jobs:
 
       - name: Update version in GitHub environment
         if: success()
-        run: |
-          gh variable set CURRENT_VERSION ${{ steps.next_version.outputs.NEXT_VERSION }} --env ios
         env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          # Create JSON payload with the new version
+          echo "{\"name\":\"CURRENT_VERSION\",\"value\":\"${{ steps.next_version.outputs.NEXT_VERSION }}\"}" > version.json
+          
+          # Update the variable using GitHub API
+          curl -L \
+            -X PATCH \
+            -H "Accept: application/vnd.github+json" \
+            -H "Authorization: Bearer $GH_TOKEN" \
+            -H "X-GitHub-Api-Version: 2022-11-28" \
+            https://api.github.com/repositories/${{ github.repository_id }}/environments/ios/variables/CURRENT_VERSION \
+            -d @version.json
 
       - name: Setup Ruby
         uses: ruby/setup-ruby@v1
