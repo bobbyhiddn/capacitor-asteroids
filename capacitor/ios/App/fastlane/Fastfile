@@ -19,7 +19,7 @@ platform :ios do
       api_key: lane_context[SharedValues::APP_STORE_CONNECT_API_KEY],
       app_identifier: ENV["DEVELOPER_APP_IDENTIFIER"],
       team_id: ENV["APP_STORE_CONNECT_TEAM_ID"]
-    ) rescue "1.0.0"
+    ) rescue "1.2.0"  # Set fallback to known version
 
     UI.message("Latest TestFlight version: #{latest_testflight_version}")
 
@@ -27,14 +27,26 @@ platform :ios do
       # Split current version into components
       major, minor, patch = latest_testflight_version.split('.').map(&:to_i)
       
-      # Calculate new version
+      # Calculate new version ensuring it's higher than 1.2.0
       new_version = case ENV["VERSION_TYPE"]
       when "major"
-        "#{major + 1}.0.0"
+        if major <= 1
+          "2.0.0"
+        else
+          "#{major + 1}.0.0"
+        end
       when "minor"
-        "#{major}.#{minor + 1}.0"
+        if major == 1 && minor <= 2
+          "1.3.0"
+        else
+          "#{major}.#{minor + 1}.0"
+        end
       else # patch or default
-        "#{major}.#{minor}.#{patch + 1}"
+        if major == 1 && minor <= 2
+          "1.3.0"
+        else
+          "#{major}.#{minor}.#{patch + 1}"
+        end
       end
 
       UI.message("Setting new version to: #{new_version}")
