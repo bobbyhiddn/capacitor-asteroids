@@ -107,9 +107,10 @@ jobs:
             --method PUT \
             -H "Accept: application/vnd.github+json" \
             -H "X-GitHub-Api-Version: 2022-11-28" \
-            /repos/${{ github.repository }}/environments/ios/variables/CURRENT_VERSION \
+            "/repos/${{ github.repository }}/actions/variables" \
             -f name='CURRENT_VERSION' \
-            -f value="$(cat new_version.txt)"
+            -f value="$(cat new_version.txt)" \
+            -f environment='ios'
 
       - name: Setup Ruby
         uses: ruby/setup-ruby@v1
