@@ -5,10 +5,19 @@ on:
       - main
   workflow_dispatch:
     inputs:
-      version_number:
-        description: 'Version number (e.g., 1.03)'
+      version_type:
+        description: 'Version increment type (patch/minor/major)'
         required: true
-        default: '1.03'
+        default: 'patch'
+        type: choice
+        options:
+          - patch
+          - minor
+          - major
+      custom_version:
+        description: 'Custom version (leave empty for auto-increment)'
+        required: false
+        type: string
 
 jobs:
   check_match_setup:
@@ -122,7 +131,8 @@ jobs:
           APPLE_KEY_ID: "${{ secrets.APPLE_KEY_ID }}"
           APPLE_ISSUER_ID: "${{ secrets.APPLE_ISSUER_ID }}"
           APPLE_KEY_CONTENT: "${{ secrets.APPLE_KEY_CONTENT }}"
-          VERSION_NUMBER: ${{ github.event.inputs.version_number || '1.03' }}
+          VERSION_TYPE: ${{ github.event.inputs.version_type || 'patch' }}
+          CUSTOM_VERSION: ${{ github.event.inputs.custom_version }}
         run: |
           cd capacitor/ios/App
           bundle exec fastlane closed_beta
