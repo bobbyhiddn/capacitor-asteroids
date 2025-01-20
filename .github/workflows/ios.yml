@@ -69,6 +69,7 @@ jobs:
         run: |
           # Default to 1.0.0 if not set
           echo "CURRENT_VERSION=${CURRENT_VERSION:-1.0.0}" >> $GITHUB_OUTPUT
+          echo $CURRENT_VERSION
         env:
           CURRENT_VERSION: ${{ vars.CURRENT_VERSION }}
 
