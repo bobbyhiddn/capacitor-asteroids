@@ -99,13 +99,25 @@ jobs:
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
-          # Update the environment-scoped variable using GitHub CLI
-          gh api \
+          # Try GitHub CLI first
+          if ! gh api \
             --method PATCH \
+            "/repos/${{ github.repository }}/environments/ios/variables/CURRENT_VERSION" \
             -H "Accept: application/vnd.github+json" \
-            -H "Authorization: Bearer $GH_TOKEN" \
-            -f value="${{ steps.next_version.outputs.NEXT_VERSION }}"
-        
+            -H "X-GitHub-Api-Version: 2022-11-28" \
+            -f "name=CURRENT_VERSION" \
+            -f "value=${{ steps.next_version.outputs.NEXT_VERSION }}"; then
+            
+            echo "GitHub CLI failed, trying curl..."
+            # Fallback to curl
+            curl -L \
+              -X PATCH \
+              -H "Accept: application/vnd.github+json" \
+              -H "Authorization: Bearer $GH_TOKEN" \
+              -H "X-GitHub-Api-Version: 2022-11-28" \
+              "https://api.github.com/repos/${{ github.repository }}/environments/ios/variables/CURRENT_VERSION" \
+              -d "{\"name\":\"CURRENT_VERSION\",\"value\":\"${{ steps.next_version.outputs.NEXT_VERSION }}\"}"
+          fi
 
       - name: Setup Ruby
         uses: ruby/setup-ruby@v1
