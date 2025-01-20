@@ -14,26 +14,18 @@ platform :ios do
       is_key_content_base64: false
     )
 
-    # Get current version from Xcode project
-    current_version = get_version_number(
-      xcodeproj: "App.xcodeproj",
-      target: "App"
-    )
+    # Get latest version from TestFlight
+    latest_testflight_version = latest_testflight_version(
+      api_key: lane_context[SharedValues::APP_STORE_CONNECT_API_KEY],
+      app_identifier: ENV["DEVELOPER_APP_IDENTIFIER"],
+      team_id: ENV["APP_STORE_CONNECT_TEAM_ID"]
+    ) rescue "1.0.0"
 
-    # Ensure we have a valid version number
-    if current_version.nil? || current_version.empty? || !current_version.match(/^\d+\.\d+\.\d+$/)
-      # Set a default version if invalid
-      current_version = "1.0.0"
-      increment_version_number(
-        version_number: current_version,
-        xcodeproj: "App.xcodeproj"
-      )
-    end
+    UI.message("Latest TestFlight version: #{latest_testflight_version}")
 
-    # Handle version number
     if ENV["CUSTOM_VERSION"].to_s.empty?
       # Split current version into components
-      major, minor, patch = current_version.split('.').map(&:to_i)
+      major, minor, patch = latest_testflight_version.split('.').map(&:to_i)
       
       # Calculate new version
       new_version = case ENV["VERSION_TYPE"]
@@ -45,6 +37,8 @@ platform :ios do
         "#{major}.#{minor}.#{patch + 1}"
       end
 
+      UI.message("Setting new version to: #{new_version}")
+
       # Set new version
       increment_version_number(
         version_number: new_version,
@@ -54,6 +48,11 @@ platform :ios do
       # Validate custom version format
       unless ENV["CUSTOM_VERSION"].match(/^\d+\.\d+\.\d+$/)
         UI.user_error!("Custom version must be in format X.Y.Z (e.g., 1.0.0)")
+      end
+      
+      # Compare with latest TestFlight version
+      if Gem::Version.new(ENV["CUSTOM_VERSION"]) <= Gem::Version.new(latest_testflight_version)
+        UI.user_error!("Custom version #{ENV["CUSTOM_VERSION"]} must be higher than latest TestFlight version #{latest_testflight_version}")
       end
       
       # Use custom version if provided
