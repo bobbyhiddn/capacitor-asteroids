@@ -19,6 +19,11 @@ on:
         required: false
         type: string
 
+permissions:
+  contents: read
+  deployments: write
+  actions: write
+
 jobs:
   check_match_setup:
     runs-on: ubuntu-latest
@@ -93,17 +98,17 @@ jobs:
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
-          # Create JSON payload with the new version
-          echo "{\"name\":\"CURRENT_VERSION\",\"value\":\"${{ steps.next_version.outputs.NEXT_VERSION }}\"}" > version.json
+          # Create a temporary file with the new version
+          echo "${{ steps.next_version.outputs.NEXT_VERSION }}" > new_version.txt
           
-          # Update the variable using GitHub API
-          curl -L \
-            -X PATCH \
+          # Use the GitHub CLI to update the variable
+          gh api \
+            --method PUT \
             -H "Accept: application/vnd.github+json" \
-            -H "Authorization: Bearer $GH_TOKEN" \
             -H "X-GitHub-Api-Version: 2022-11-28" \
-            https://api.github.com/repositories/${{ github.repository_id }}/environments/ios/variables/CURRENT_VERSION \
-            -d @version.json
+            /repos/${{ github.repository }}/environments/ios/variables/CURRENT_VERSION \
+            -f name='CURRENT_VERSION' \
+            -f value="$(cat new_version.txt)"
 
       - name: Setup Ruby
         uses: ruby/setup-ruby@v1
