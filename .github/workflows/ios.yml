@@ -72,9 +72,11 @@ jobs:
         id: current_version
         run: |
           # Default to 1.0.0 if not set
-          CURRENT_VERSION=$(gh secret get IOS_VERSION || echo "1.0.0")
+          CURRENT_VERSION="${IOS_VERSION:-1.0.0}"
           echo "Current version: $CURRENT_VERSION"
           echo "CURRENT_VERSION=$CURRENT_VERSION" >> $GITHUB_OUTPUT
+        env:
+          IOS_VERSION: ${{ secrets.IOS_VERSION }}
 
       - name: Calculate next version
         id: next_version
