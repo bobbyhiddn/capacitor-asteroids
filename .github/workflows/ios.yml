@@ -92,7 +92,7 @@ jobs:
                 ;;
             esac
           fi
-          echo "NEXT_VERSION=$next_version" >> $GITHUB_OUTPUT
+          echo $next_version
 
       - name: Update version in GitHub environment
         if: success()
