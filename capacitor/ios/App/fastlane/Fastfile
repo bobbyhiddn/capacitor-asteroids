@@ -27,7 +27,7 @@ platform :ios do
     )
 
     # Extract git authorization token from MATCH_GIT_URL
-    git_url = ENV["MATCH_GIT_URL"].sub("https://", "https://#{ENV["GIT_AUTHORIZATION"]}@")
+    git_url = ENV["MATCH_GIT_URL"]
 
     # Sync certificates and profiles
     sync_code_signing(

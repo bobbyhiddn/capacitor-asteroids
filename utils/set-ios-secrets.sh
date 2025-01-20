@@ -49,6 +49,10 @@ gh secret set GIT_URL --body "$GIT_URL"
 gh secret set GIT_AUTHORIZATION --body "$GIT_AUTHORIZATION"
 gh secret set TEMP_KEYCHAIN_PASSWORD --body "$TEMP_KEYCHAIN_PASSWORD"
 
+# Construct and set MATCH_GIT_URL
+MATCH_GIT_URL="https://${GIT_AUTHORIZATION}@github.com/bobbyhiddn/fastlane.git"
+gh secret set MATCH_GIT_URL --body "$MATCH_GIT_URL"
+
 echo "iOS secrets have been set successfully!"
 echo ""
 echo "⚠️ Note: Make sure your .env file contains all required values"
