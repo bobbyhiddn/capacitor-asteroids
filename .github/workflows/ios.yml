@@ -1,3 +1,7 @@
+# This workflow handles deploying the iOS app to TestFlight
+# Version management is handled through GitHub secrets:
+# - IOS_VERSION: The current version (e.g., 1.0.0)
+#   To set manually: gh secret set IOS_VERSION --body "1.0.0"
 name: Deploy iOS app to TestFlight on merge
 on:
   push:
@@ -23,8 +27,6 @@ permissions:
   contents: read
   deployments: write
   actions: write
-  variables: write
-  secrets: write
 
 jobs:
   check_match_setup:
@@ -71,7 +73,7 @@ jobs:
         run: |
           # Default to 1.0.0 if not set
           echo "CURRENT_VERSION=${CURRENT_VERSION:-1.0.0}" >> $GITHUB_OUTPUT
-          echo "Current version: $CURRENT_VERSION"
+          echo "Current version: ${CURRENT_VERSION:-1.0.0}"
         env:
           CURRENT_VERSION: ${{ secrets.IOS_VERSION }}
 
@@ -99,11 +101,12 @@ jobs:
 
       - name: Update version in GitHub
         if: success()
-        env:
-          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
-          # Update the version secret
+          # Update the version secret using a personal access token
+          # Note: This requires a PAT with repo scope stored in GH_PAT
           gh secret set IOS_VERSION --body "${{ steps.next_version.outputs.NEXT_VERSION }}"
+        env:
+          GH_TOKEN: ${{ secrets.GH_PAT }}
 
       - name: Setup Ruby
         uses: ruby/setup-ruby@v1
