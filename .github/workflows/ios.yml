@@ -92,24 +92,21 @@ jobs:
                 ;;
             esac
           fi
-          echo $next_version
+          echo "NEXT_VERSION=$next_version" >> $GITHUB_OUTPUT
+          echo "Calculated next version: $next_version"
 
       - name: Update version in GitHub environment
         if: success()
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
-          # Create a temporary file with the new version
-          echo "${{ steps.next_version.outputs.NEXT_VERSION }}" > new_version.txt
-          
-          # Update the environment-scoped variable using GitHub CLI
+          # Update the environment variable
           gh api \
             --method PATCH \
             -H "Accept: application/vnd.github+json" \
-            -H "Authorization: Bearer $GH_TOKEN" \
-            "/repos/${{ github.repository }}/environments/ios/variables/CURRENT_VERSION" \
-            -f value="$(cat new_version.txt)"
-        
+            -H "X-GitHub-Api-Version: 2022-11-28" \
+            /repos/${{ github.repository }}/environments/ios/variables/CURRENT_VERSION \
+            -f "name=CURRENT_VERSION" -f "value=${{ steps.next_version.outputs.NEXT_VERSION }}"
 
       - name: Setup Ruby
         uses: ruby/setup-ruby@v1
