@@ -97,14 +97,13 @@ jobs:
       - name: Update version in GitHub environment
         if: success()
         env:
-          GIT_AUTHORIZATION: ${{ secrets.GIT_AUTHORIZATION }}
+          GH_TOKEN: ${{ github.token }}
         run: |
           # Update the environment-scoped variable using GitHub CLI
           gh api \
             --method PATCH \
             -H "Accept: application/vnd.github+json" \
-            -H "Authorization: Bearer $GIT_AUTHORIZATION" \
-            "/repos/${{ github.repository }}/environments/ios/variables/CURRENT_VERSION" \
+            -H "Authorization: Bearer $GH_TOKEN" \
             -f value="${{ steps.next_version.outputs.NEXT_VERSION }}"
         
 
