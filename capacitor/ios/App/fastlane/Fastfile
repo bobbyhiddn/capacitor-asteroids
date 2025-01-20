@@ -14,27 +14,48 @@ platform :ios do
       is_key_content_base64: false
     )
 
+    # Get current version from Xcode project
+    current_version = get_version_number(
+      xcodeproj: "App.xcodeproj",
+      target: "App"
+    )
+
+    # Ensure we have a valid version number
+    if current_version.nil? || current_version.empty? || !current_version.match(/^\d+\.\d+\.\d+$/)
+      # Set a default version if invalid
+      current_version = "1.0.0"
+      increment_version_number(
+        version_number: current_version,
+        xcodeproj: "App.xcodeproj"
+      )
+    end
+
     # Handle version number
     if ENV["CUSTOM_VERSION"].to_s.empty?
-      # Auto-increment version based on type
-      case ENV["VERSION_TYPE"]
+      # Split current version into components
+      major, minor, patch = current_version.split('.').map(&:to_i)
+      
+      # Calculate new version
+      new_version = case ENV["VERSION_TYPE"]
       when "major"
-        increment_version_number(
-          bump_type: "major",
-          xcodeproj: "App.xcodeproj"
-        )
+        "#{major + 1}.0.0"
       when "minor"
-        increment_version_number(
-          bump_type: "minor",
-          xcodeproj: "App.xcodeproj"
-        )
+        "#{major}.#{minor + 1}.0"
       else # patch or default
-        increment_version_number(
-          bump_type: "patch",
-          xcodeproj: "App.xcodeproj"
-        )
+        "#{major}.#{minor}.#{patch + 1}"
       end
+
+      # Set new version
+      increment_version_number(
+        version_number: new_version,
+        xcodeproj: "App.xcodeproj"
+      )
     else
+      # Validate custom version format
+      unless ENV["CUSTOM_VERSION"].match(/^\d+\.\d+\.\d+$/)
+        UI.user_error!("Custom version must be in format X.Y.Z (e.g., 1.0.0)")
+      end
+      
       # Use custom version if provided
       increment_version_number(
         version_number: ENV["CUSTOM_VERSION"],
