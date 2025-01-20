@@ -104,7 +104,7 @@ func (s *RenderSystem) Draw(screen *ebiten.Image) {
 	for _, player := range players {
 		if p, ok := player.(components.Player); ok {
 			// Draw score
-			render.DrawScaledText(screen, fmt.Sprintf("Score: %d", p.Score), 10, 25, 1.5, color.White, render.DefaultFace)
+			render.DrawScaledText(screen, fmt.Sprintf("Score: %d", p.Score), 10, 25, 1.75, color.White, render.DefaultFace)
 
 			// Draw lives as ship icons
 			render.DrawScaledText(screen, "Lives:", 10, 60, 1.5, color.White, render.DefaultFace)
