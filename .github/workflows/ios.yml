@@ -20,7 +20,7 @@ on:
         type: string
 
 permissions:
-  contents: read
+  contents: write
   deployments: write
   actions: write
 
@@ -127,6 +127,8 @@ jobs:
           if [ "$status_code" -ne 200 ] && [ "$status_code" -ne 204 ]; then
             echo "Failed to update version"
             exit 1
+          else
+            echo "Successfully updated version to $NEXT_VERSION"
           fi
 
       - name: Setup Ruby
