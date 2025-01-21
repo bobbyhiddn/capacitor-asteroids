@@ -124,7 +124,7 @@ jobs:
           echo "Response: $response_body"
           echo "Status code: $status_code"
           
-          if [ "$status_code" -ne 200 ]; then
+          if [ "$status_code" -ne 200 ] && [ "$status_code" -ne 204 ]; then
             echo "Failed to update version"
             exit 1
           fi
